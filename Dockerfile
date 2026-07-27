@@ -16,5 +16,6 @@ USER phpuser
 
 EXPOSE 8080
 
-# PHP built-in server: serves static files + executes .php scripts
-CMD ["php", "-S", "0.0.0.0:8080"]
+# PHP built-in server with router: every request goes through router.php
+# which enforces authentication before serving any file
+CMD ["php", "-S", "0.0.0.0:8080", "router.php"]

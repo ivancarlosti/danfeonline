@@ -98,7 +98,9 @@ if ($error) {
     http_response_code(502);
     header('Content-Type: application/json');
     header('Access-Control-Allow-Origin: *');
-    echo json_encode(['error' => 'Proxy error', 'detail' => $error]);
+    // Sanitize error: strip API key if it accidentally appears in cURL message
+    $safeError = ($apiKey !== '') ? str_replace($apiKey, '[REDACTED]', $error) : $error;
+    echo json_encode(['error' => 'Proxy error', 'detail' => $safeError]);
     exit;
 }
 
@@ -124,7 +126,8 @@ if ($httpCode === 404 || $httpCode === 422) {
         http_response_code(502);
         header('Content-Type: application/json');
         header('Access-Control-Allow-Origin: *');
-        echo json_encode(['error' => 'Proxy error during add', 'detail' => $addError]);
+        $safeError = ($apiKey !== '') ? str_replace($apiKey, '[REDACTED]', $addError) : $addError;
+        echo json_encode(['error' => 'Proxy error during add', 'detail' => $safeError]);
         exit;
     }
 
@@ -170,7 +173,8 @@ if ($httpCode === 404 || $httpCode === 422) {
                 http_response_code(502);
                 header('Content-Type: application/json');
                 header('Access-Control-Allow-Origin: *');
-                echo json_encode(['error' => 'Proxy error during poll', 'detail' => $pollError]);
+                $safeError = ($apiKey !== '') ? str_replace($apiKey, '[REDACTED]', $pollError) : $pollError;
+                echo json_encode(['error' => 'Proxy error during poll', 'detail' => $safeError]);
                 exit;
             }
 
@@ -191,11 +195,18 @@ if ($httpCode === 404 || $httpCode === 422) {
             exit;
         }
     } else {
-        // Add failed with unexpected status
+        // Add failed with unexpected status — sanitize before forwarding
         http_response_code($addHttpCode);
         header('Content-Type: application/json');
         header('Access-Control-Allow-Origin: *');
-        echo $addResponse;
+        // Never pass raw upstream response directly; decode and strip sensitive fields
+        $safeBody = json_decode($addResponse, true);
+        if (!$safeBody) {
+            $safeBody = ['error' => 'Upstream error', 'http_code' => $addHttpCode];
+        }
+        // Remove any key-like fields that might leak credentials
+        unset($safeBody['api_key'], $safeBody['apikey'], $safeBody['api-key'], $safeBody['token']);
+        echo json_encode($safeBody);
         exit;
     }
 }
