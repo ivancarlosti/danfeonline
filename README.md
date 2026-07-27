@@ -54,7 +54,7 @@ Three auth modes configurable via environment variable:
 | Mode | Description |
 |------|-------------|
 | `none` | No authentication (default, open access) |
-| `account` | HTTP Basic Authentication with username/password |
+`account` | Session-based login with a custom HTML login form (username/password) |
 | `keycloak` | OpenID Connect SSO via Keycloak with optional email restriction |
 
 ### 🐳 Docker-Ready
@@ -109,8 +109,12 @@ danfeonline/
 │   ├── index.html                # Single-page application shell
 │   ├── app.js                    # Core logic: tabs, PDF gen, API, i18n, camera
 │   ├── styles.css                # Complete stylesheet (light + dark themes)
+│   ├── router.php                # PHP router: enforces auth on every request
+│   ├── auth.php                  # Authentication module (session/OIDC)
 │   ├── proxy.php                 # Server-side CORS proxy for Meu Danfe API
-│   └── auth.php                  # Authentication gate (none/account/keycloak)
+│   ├── login.html                # Login form page (account mode)
+│   ├── login.php                 # Login handler (validates credentials)
+│   └── logout.php                # Logout handler (destroys session)
 ├── docker/
 │   ├── docker-compose.yml        # Single-service container stack
 │   └── .env                      # Configuration template
@@ -219,13 +223,15 @@ AUTH_METHOD=none
 ```
 Application is publicly accessible. No login required.
 
-### Account (HTTP Basic Authentication)
+### Account (Session-Based Login Form)
 ```env
 AUTH_METHOD=account
 ACCOUNT_LOGIN=admin
 ACCOUNT_PASSWORD=your_secure_password
 ```
-Browser prompts for username and password via standard HTTP Basic Auth dialog. Credentials are validated against the configured values on every API request.
+Visitors are redirected to a styled login page (`login.html`) where they enter their credentials. On success, a PHP session is created and they are redirected to the application. The session cookie (`PHPSESSID`) is `HttpOnly`, `SameSite=Strict`, and `Secure` (when behind HTTPS). A logout button in the header destroys the session and returns to the login page.
+
+Session credentials are compared using `hash_equals()` for timing-attack resistance.
 
 ### Keycloak (SSO)
 ```env
@@ -268,7 +274,7 @@ server {
 }
 ```
 
-> **Note:** When using Basic Auth behind a reverse proxy, ensure `proxy_set_header Authorization $http_authorization;` is included so the `Authorization` header reaches the PHP backend.
+> **Note:** When using session-based auth (account mode) behind a reverse proxy, ensure the proxy forwards cookies correctly. No special `Authorization` header forwarding is needed since auth uses standard PHP sessions.
 
 ---
 
@@ -281,7 +287,7 @@ server {
 | PDF Generation | pdfmake 0.2.10 |
 | Barcode Scanner | Quagga2 1.8.3 |
 | HTTP Client (PHP) | cURL |
-| Auth (Basic) | PHP built-in `getenv()` + header parsing |
+| Auth (Session) | PHP sessions with `hash_equals()` credential check |
 | Auth (SSO) | cURL to Keycloak OIDC `/userinfo` |
 | Containerization | Docker + Docker Compose |
 | CI/CD | GitHub Actions (multi-arch build + release) |
@@ -311,9 +317,11 @@ server {
 **Port conflict:**
 - Change `PORT` in `.env` to an available port (e.g., `8081`).
 
-**Authentication not working behind reverse proxy:**
-- Nginx strips the `Authorization` header by default. Add `proxy_set_header Authorization $http_authorization;` to your Nginx config.
-- For Apache: `SetEnvIf Authorization "(.*)" HTTP_AUTHORIZATION=$1`
+**Authentication not working:**
+- Ensure `AUTH_METHOD=account` and both `ACCOUNT_LOGIN` and `ACCOUNT_PASSWORD` are set in `docker/.env`.
+- If the login page redirects back to itself, check that your browser accepts cookies from the site.
+- Restart the container after changing `.env`: `docker compose restart`
+- For Keycloak auth behind a reverse proxy: Nginx strips the `Authorization` header by default. Add `proxy_set_header Authorization $http_authorization;` to your Nginx config.
 
 ---
 

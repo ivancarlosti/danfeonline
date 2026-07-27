@@ -5,24 +5,19 @@
  * Enforces authentication on EVERY incoming request before serving
  * any file — static (HTML, CSS, JS) or dynamic (PHP).
  *
- * Usage: php -S 0.0.0.0:8080 router.php
+ * Whitelisted paths (/login.html, /login.php, /logout.php) bypass
+ * auth to allow the login form to render.
  *
- * How it works with PHP's built-in server:
- *   - Return false: PHP serves the file as a static resource
- *   - Return true (or exit): request is considered handled
+ * Usage: php -S 0.0.0.0:8080 router.php
  */
 
-// ── Authentication gate (runs on every request) ────────────
-// On auth failure, auth.php calls exit() — request stops here.
-// On success, auth.php returns and execution continues.
 require_once __DIR__ . '/auth.php';
 
-// ── Route the request ──────────────────────────────────────
+// ── Resolve the requested path ─────────────────────────────
 $requestUri = $_SERVER['REQUEST_URI'];
 $path = parse_url($requestUri, PHP_URL_PATH);
 
-// Prevent directory traversal
-// Normalize: collapse /../ and /./, strip trailing slash (except root)
+// Normalize
 $normalized = '/' . ltrim($path, '/');
 $normalized = preg_replace('#/\./#', '/', $normalized);
 $normalized = preg_replace('#/\.\./#', '/', $normalized);
@@ -30,18 +25,35 @@ if ($normalized !== '/' && str_ends_with($normalized, '/')) {
     $normalized = rtrim($normalized, '/');
 }
 
-$file = __DIR__ . $normalized;
+// ── Public paths — no authentication required ──────────────
+$publicPaths = [
+    '/login.html',
+    '/login.php',
+    '/logout.php',
+    '/styles.css',
+];
 
-// Safety check: resolved path must stay inside webapp directory
+if (!in_array($normalized, $publicPaths, true)) {
+    if (!auth_check()) {
+        // Redirect to login form, preserving the original destination
+        $dest = urlencode($requestUri);
+        header('Location: /login.html?redirect=' . $dest);
+        exit;
+    }
+}
+
+// ── Security: resolve real path, prevent traversal ─────────
+$file = __DIR__ . $normalized;
 $realBase = realpath(__DIR__);
-$realFile = realpath($file);
-if ($realFile === false || !str_starts_with($realFile, $realBase . DIRECTORY_SEPARATOR) && $realFile !== $realBase) {
+$realFile = @realpath($file);
+
+if ($realFile === false || (!str_starts_with($realFile, $realBase . DIRECTORY_SEPARATOR) && $realFile !== $realBase)) {
     http_response_code(403);
     echo 'Forbidden';
     exit;
 }
 
-// If the path points to a directory, try index.html
+// Directory → index.html
 if (is_dir($realFile)) {
     $indexFile = $realFile . DIRECTORY_SEPARATOR . 'index.html';
     if (is_file($indexFile)) {
@@ -49,8 +61,7 @@ if (is_dir($realFile)) {
     }
 }
 
-// ── PHP files: execute directly ──────────────────────────
-// (They already include auth.php via require_once, which is a no-op now)
+// ── PHP file: execute directly ─────────────────────────────
 if (pathinfo($realFile, PATHINFO_EXTENSION) === 'php') {
     if (is_file($realFile)) {
         require $realFile;
@@ -61,6 +72,5 @@ if (pathinfo($realFile, PATHINFO_EXTENSION) === 'php') {
     return true;
 }
 
-// ── Static files: let PHP built-in server handle them ────
-// Return false tells PHP to serve the file as a static resource
+// ── Static file: let PHP built-in server handle it ─────────
 return false;

@@ -1,117 +1,143 @@
 <?php
 /**
- * Authentication Gate — included by proxy.php before any API logic.
+ * Authentication Module — session-based login with HTML form.
  *
- * Reads AUTH_METHOD from environment and enforces access:
+ * Reads AUTH_METHOD from environment:
  *   - none:      Pass-through, no authentication required
- *   - account:   HTTP Basic Authentication (ACCOUNT_LOGIN / ACCOUNT_PASSWORD)
- *   - keycloak:  OIDC Bearer token validation via Keycloak /userinfo endpoint
+ *   - account:   Session-based login form (ACCOUNT_LOGIN / ACCOUNT_PASSWORD)
+ *   - keycloak:  OIDC Bearer token validation via Keycloak
  *
- * On failure, returns JSON error with HTTP 401 and calls exit().
+ * Called by router.php on every request and by proxy.php as defense-in-depth.
  */
 
-// Always set CORS headers so auth errors are readable by the browser
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: POST, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type, Authorization');
-header('Access-Control-Max-Age: 86400');
-
-// Handle CORS preflight before auth check
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    http_response_code(204);
-    exit;
-}
-
+// ── Detect auth method ─────────────────────────────────────
 $authMethod = strtolower(getenv('AUTH_METHOD') ?: 'none');
 
-// ── Mode: none — allow all ──────────────────────────────────
-if ($authMethod === 'none') {
-    return; // continue to proxy.php
+// ── Secure session configuration ───────────────────────────
+if ($authMethod === 'account') {
+    ini_set('session.cookie_httponly', '1');
+    ini_set('session.cookie_samesite', 'Strict');
+    ini_set('session.use_strict_mode', '1');
+    // Mark secure if behind HTTPS reverse proxy
+    if (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') {
+        ini_set('session.cookie_secure', '1');
+    } elseif (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') {
+        ini_set('session.cookie_secure', '1');
+    }
 }
 
-// ── Mode: account — HTTP Basic Auth ──────────────────────────
-if ($authMethod === 'account') {
+/**
+ * Check if the current request is authenticated.
+ */
+function auth_check(): bool {
+    global $authMethod;
+
+    if ($authMethod === 'none') {
+        return true;
+    }
+
+    if ($authMethod === 'account') {
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+        return !empty($_SESSION['danfe_authenticated']);
+    }
+
+    if ($authMethod === 'keycloak') {
+        return auth_check_keycloak();
+    }
+
+    return false;
+}
+
+/**
+ * Attempt login with username/password (account mode).
+ */
+function auth_login(string $username, string $password): bool {
     $expectedLogin = getenv('ACCOUNT_LOGIN') ?: '';
     $expectedPassword = getenv('ACCOUNT_PASSWORD') ?: '';
 
     if ($expectedLogin === '' || $expectedPassword === '') {
-        http_response_code(500);
-        header('Content-Type: application/json');
-        echo json_encode(['error' => 'Server configuration error']);
-        exit;
+        return false;
     }
 
-    // Extract Basic Auth credentials
-    $authHeader = $_SERVER['HTTP_AUTHORIZATION'] ?? $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ?? '';
-
-    if (empty($authHeader) || !str_starts_with($authHeader, 'Basic ')) {
-        http_response_code(401);
-        header('Content-Type: application/json');
-        header('WWW-Authenticate: Basic realm="DANFE Online", charset="UTF-8"');
-        echo json_encode(['error' => 'Authentication required']);
-        exit;
+    // Constant-time comparison to prevent timing attacks
+    if (hash_equals($expectedLogin, $username) && hash_equals($expectedPassword, $password)) {
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+        session_regenerate_id(true);
+        $_SESSION['danfe_authenticated'] = true;
+        $_SESSION['danfe_login_time'] = time();
+        return true;
     }
 
-    $decoded = base64_decode(substr($authHeader, 6), true);
-    if ($decoded === false || !str_contains($decoded, ':')) {
-        http_response_code(401);
-        header('Content-Type: application/json');
-        echo json_encode(['error' => 'Invalid credentials format']);
-        exit;
-    }
-
-    [$user, $pass] = explode(':', $decoded, 2);
-
-    if ($user !== $expectedLogin || $pass !== $expectedPassword) {
-        http_response_code(401);
-        header('Content-Type: application/json');
-        header('WWW-Authenticate: Basic realm="DANFE Online", charset="UTF-8"');
-        echo json_encode(['error' => 'Invalid credentials']);
-        exit;
-    }
-
-    return; // authenticated, continue to proxy.php
+    return false;
 }
 
-// ── Mode: keycloak — OIDC Bearer token validation ────────────
-if ($authMethod === 'keycloak') {
+/**
+ * Destroy session (logout).
+ */
+function auth_logout(): void {
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
+    $_SESSION = [];
+    if (ini_get('session.use_cookies')) {
+        $params = session_get_cookie_params();
+        setcookie(session_name(), '', time() - 42000,
+            $params['path'], $params['domain'],
+            $params['secure'], $params['httponly']
+        );
+    }
+    session_destroy();
+}
+
+/**
+ * Get the current auth method.
+ */
+function auth_method(): string {
+    global $authMethod;
+    return $authMethod;
+}
+
+// ── Keycloak Bearer token validation (internal) ────────────
+function auth_check_keycloak(): bool {
+    static $checked = false;
+    static $result = false;
+
+    // Only validate once per request
+    if ($checked) {
+        return $result;
+    }
+    $checked = true;
+
+    // If already in session, skip re-validation
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
+    if (!empty($_SESSION['danfe_authenticated'])) {
+        $result = true;
+        return true;
+    }
+
     $keycloakBaseUrl  = rtrim(getenv('KEYCLOAK_BASE_URL') ?: '', '/');
     $keycloakRealm    = getenv('KEYCLOAK_REALM') ?: '';
     $keycloakClientId = getenv('KEYCLOAK_CLIENT_ID') ?: '';
-    $keycloakClientSecret = getenv('KEYCLOAK_CLIENT_SECRET') ?: '';
-    $keycloakRedirectUri  = getenv('KEYCLOAK_REDIRECT_URI') ?: '';
     $keycloakEmailAccount = getenv('KEYCLOAK_EMAIL_ACCOUNT') ?: '';
 
     if ($keycloakBaseUrl === '' || $keycloakRealm === '' || $keycloakClientId === '') {
-        http_response_code(500);
-        header('Content-Type: application/json');
-        echo json_encode(['error' => 'Server configuration error']);
-        exit;
+        return false;
     }
 
-    // Extract Bearer token
     $authHeader = $_SERVER['HTTP_AUTHORIZATION'] ?? $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ?? '';
 
     if (empty($authHeader) || !str_starts_with($authHeader, 'Bearer ')) {
-        // No token — return Keycloak auth URL so SPA can redirect
-        http_response_code(401);
-        header('Content-Type: application/json');
-        $authUrl = $keycloakBaseUrl . '/realms/' . urlencode($keycloakRealm)
-                 . '/protocol/openid-connect/auth'
-                 . '?client_id=' . urlencode($keycloakClientId)
-                 . '&redirect_uri=' . urlencode($keycloakRedirectUri)
-                 . '&response_type=code'
-                 . '&scope=openid+email+profile';
-        echo json_encode([
-            'error' => 'Authentication required',
-            'auth_url' => $authUrl,
-        ]);
-        exit;
+        return false;
     }
 
     $accessToken = substr($authHeader, 7);
 
-    // Validate token against Keycloak /userinfo endpoint
     $userinfoUrl = $keycloakBaseUrl . '/realms/' . urlencode($keycloakRealm)
                  . '/protocol/openid-connect/userinfo';
 
@@ -128,34 +154,20 @@ if ($authMethod === 'keycloak') {
     curl_close($ch);
 
     if ($userinfoHttpCode !== 200 || empty($userinfoResponse)) {
-        http_response_code(401);
-        header('Content-Type: application/json');
-        echo json_encode(['error' => 'Invalid or expired token']);
-        exit;
+        return false;
     }
 
     $userinfo = json_decode($userinfoResponse, true);
-
     if (!$userinfo || !isset($userinfo['email'])) {
-        http_response_code(401);
-        header('Content-Type: application/json');
-        echo json_encode(['error' => 'Unable to verify token']);
-        exit;
+        return false;
     }
 
-    // Optional: restrict to a specific email
     if ($keycloakEmailAccount !== '' && $userinfo['email'] !== $keycloakEmailAccount) {
-        http_response_code(403);
-        header('Content-Type: application/json');
-        echo json_encode(['error' => 'Access denied for this account']);
-        exit;
+        return false;
     }
 
-    return; // authenticated, continue to proxy.php
+    // Valid — persist in session so subsequent requests skip re-validation
+    $_SESSION['danfe_authenticated'] = true;
+    $result = true;
+    return true;
 }
-
-// ── Unknown AUTH_METHOD ──────────────────────────────────────
-http_response_code(500);
-header('Content-Type: application/json');
-echo json_encode(['error' => 'Server configuration error']);
-exit;

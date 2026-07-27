@@ -969,7 +969,6 @@
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ chave: state.accessKey }),
-                    credentials: 'same-origin',
                 });
 
                 if (!response.ok) {

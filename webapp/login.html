@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#1a73e8">
+    <meta name="description" content="DANFE Online — Login">
+    <title>DANFE Online — Login</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔐</text></svg>">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="login-page">
+
+<div class="login-wrapper">
+    <div class="login-card">
+
+        <!-- Logo / Branding -->
+        <div class="login-card__brand">
+            <div class="login-card__logo">
+                <i class="fa-solid fa-file-invoice"></i>
+            </div>
+            <h1 class="login-card__title">DANFE Online</h1>
+            <p class="login-card__subtitle">Visualização e Geração de DANFE</p>
+        </div>
+
+        <!-- Error Messages -->
+        <div class="login-error" id="login-error" style="display:none;">
+            <i class="fa-solid fa-circle-exclamation"></i>
+            <span id="login-error-text"></span>
+        </div>
+
+        <!-- Login Form -->
+        <form class="login-form" method="POST" action="login.php" autocomplete="off">
+            <input type="hidden" name="redirect" id="login-redirect" value="/">
+
+            <div class="login-form__field">
+                <label class="login-form__label" for="username">
+                    <i class="fa-solid fa-user"></i> Usuário
+                </label>
+                <input
+                    type="text"
+                    id="username"
+                    name="username"
+                    class="login-form__input"
+                    placeholder="Digite seu usuário"
+                    autocomplete="username"
+                    required
+                    autofocus
+                >
+            </div>
+
+            <div class="login-form__field">
+                <label class="login-form__label" for="password">
+                    <i class="fa-solid fa-lock"></i> Senha
+                </label>
+                <input
+                    type="password"
+                    id="password"
+                    name="password"
+                    class="login-form__input"
+                    placeholder="Digite sua senha"
+                    autocomplete="current-password"
+                    required
+                >
+            </div>
+
+            <button type="submit" class="login-form__submit">
+                <i class="fa-solid fa-right-to-bracket"></i> Entrar
+            </button>
+        </form>
+
+    </div>
+</div>
+
+<script>
+(function() {
+    // Set redirect from URL parameter
+    const params = new URLSearchParams(window.location.search);
+    const redirect = params.get('redirect') || '/';
+    document.getElementById('login-redirect').value = redirect;
+
+    // Show error message if present
+    const error = params.get('error');
+    const errorBox = document.getElementById('login-error');
+    const errorText = document.getElementById('login-error-text');
+
+    if (error === 'invalid') {
+        errorText.textContent = 'Usuário ou senha inválidos. Tente novamente.';
+        errorBox.style.display = 'flex';
+    } else if (error === 'empty') {
+        errorText.textContent = 'Preencha todos os campos.';
+        errorBox.style.display = 'flex';
+    }
+
+    // Show logged-out message
+    if (params.get('logged_out') === '1') {
+        errorText.textContent = 'Você saiu da sua conta.';
+        errorBox.style.display = 'flex';
+        errorBox.classList.add('login-error--info');
+    }
+})();
+</script>
+
+</body>
+</html>

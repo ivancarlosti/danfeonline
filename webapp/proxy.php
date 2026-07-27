@@ -11,8 +11,18 @@
  * NEVER hardcode API keys in this file.
  */
 
-// ── Authentication gate ─────────────────────────────────────
+// ── Authentication gate (defense-in-depth) ──────────────────
 require_once __DIR__ . '/auth.php';
+
+// Router already enforces auth, but check again in case of
+// direct access or misconfiguration
+if (!auth_check()) {
+    http_response_code(401);
+    header('Content-Type: application/json');
+    header('Access-Control-Allow-Origin: *');
+    echo json_encode(['error' => 'Authentication required']);
+    exit;
+}
 
 // ── Load configuration from environment ─────────────────────
 $apiBase    = getenv('API_BASE')    ?: 'https://api.meudanfe.com.br/v2';
