@@ -68,19 +68,19 @@ Three auth modes configurable via environment variable:
 ## Architecture
 
 ```
-┌───────────────────────┐      ┌─────────────────────────┐
-│    Docker Container    │      │   Meu Danfe API v2       │
-│                        │      │   (external, SaaS)       │
+┌────────────────────────┐      ┌─────────────────────────┐
+│    Docker Container    │      │   Meu Danfe API v2      │
+│                        │      │   (external, SaaS)      │
 │  ┌──────────────────┐  │      │                         │
 │  │ danfeonline_app  │  │      │  api.meudanfe.com.br    │
 │  │                  │  │      │                         │
-│  │  ┌────────────┐  │  │      │  GET  /fd/get/da/{key} │
-│  │  │ index.html │  │  │      │  PUT  /fd/add/{key}    │
+│  │  ┌────────────┐  │  │      │  GET  /fd/get/da/{key}  │
+│  │  │ index.html │  │  │      │  PUT  /fd/add/{key}     │
 │  │  │ app.js     │──┼──┼──┐   │                         │
 │  │  │ styles.css │  │  │  │   └─────────────────────────┘
 │  │  └────────────┘  │  │  │
 │  │                  │  │  │   ┌─────────────────────────┐
-│  │  ┌────────────┐  │  │  │   │   Keycloak (optional)    │
+│  │  ┌────────────┐  │  │  │   │   Keycloak (optional)   │
 │  │  │ proxy.php  │──┼──┼──┤   │                         │
 │  │  │ auth.php   │  │  │  │   │  OIDC /userinfo         │
 │  │  └────────────┘  │  │  │   └─────────────────────────┘
@@ -88,8 +88,8 @@ Three auth modes configurable via environment variable:
 │  │  Static files ───┼──┼──┼──► Port 8080
 │  │  (no processing) │  │  │    (configurable)
 │  └──────────────────┘  │  │
-└───────────────────────┘  │
-                           │
+└────────────────────────┘  │
+                            │
                      Browser (SPA)
 ```
 
