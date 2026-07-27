@@ -10,7 +10,7 @@ A modern, progressive web application for generating and visualizing Brazilian e
 [![Forks](https://img.shields.io/github/forks/ivancarlosti/danfeonline?label=Forks&style=flat&color=ff69b4)](https://github.com/sponsors/ivancarlosti)
 [![Downloads](https://img.shields.io/github/downloads/ivancarlosti/danfeonline/total?label=Downloads&color=success)](https://github.com/ivancarlosti/danfeonline/releases)
 [![GitHub commit activity](https://img.shields.io/github/commit-activity/m/ivancarlosti/danfeonline?label=Activity)](https://github.com/ivancarlosti/danfeonline/pulse)
-[![GitHub Issues](https://img.shields.io/github/issues/ivancarlosti/danfeonline?label=Issues&color=orange)](https://github.com/ivancarlosti/danfeonline/issues)
+[![GitHub Issues](https://img.shields.io/github/issues/ivancarlosti/danfeonline?label=Issues&color=orange)](https://github.com/ivancarlosti/danfeonline/issues)  
 [![License](https://img.shields.io/github/license/ivancarlosti/danfeonline?label=License)](LICENSE)
 [![GitHub last commit](https://img.shields.io/github/last-commit/ivancarlosti/danfeonline?label=Last%20Commit)](https://github.com/ivancarlosti/danfeonline/commits)
 [![Security](https://img.shields.io/badge/Security-View%20Here-purple)](https://github.com/ivancarlosti/danfeonline/security)
