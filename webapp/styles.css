@@ -897,7 +897,7 @@
             .toast-container { bottom: 16px; right: 16px; left: 16px; max-width: none; width: auto; }
         }
 
-        @media (max-width: 480px) {
+        @media (max-width: 525px) {
             .header { padding: 0 12px; }
             .header__title { font-size: 1.05rem; }
             .header__subtitle { display: none; }
@@ -1469,7 +1469,7 @@
             }
         }
 
-        @media (max-width: 480px) {
+        @media (max-width: 525px) {
             .nfe-national-banner__badge {
                 font-size: 0.65rem;
                 padding: 3px 10px;
@@ -1635,7 +1635,7 @@
             transform: scale(0.97);
         }
 
-        @media (max-width: 480px) {
+        @media (max-width: 525px) {
             .login-card {
                 padding: 28px 20px;
             }
