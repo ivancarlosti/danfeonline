@@ -900,7 +900,7 @@
         @media (max-width: 480px) {
             .header { padding: 0 12px; }
             .header__title { font-size: 1.05rem; }
-            .header__subtitle { font-size: 0.7rem; }
+            .header__subtitle { display: none; }
             .card__title { font-size: 0.95rem; }
             .drop-zone { padding: 32px 16px; }
             .drop-zone__icon { font-size: 2.5rem; }
@@ -1476,9 +1476,7 @@
             }
 
             .nfe-national-banner__url {
-                display: block;
-                margin-left: 0;
-                margin-top: 2px;
+                display: none;
             }
         }
 
