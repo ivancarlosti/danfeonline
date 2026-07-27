@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#1a73e8">
+    <meta name="description" content="DANFE Online — Visualização e geração de Documento Auxiliar da Nota Fiscal Eletrônica 100% no navegador">
+    <title>DANFE Online</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📄</text></svg>">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <link rel="stylesheet" href="styles.css">
+
+
+</head>
+<body>
+
+<!-- ============================================================
+HEADER
+============================================================ -->
+<header class="header">
+    <div class="header__logo" aria-hidden="true">
+        <i class="fa-solid fa-file-invoice"></i>
+    </div>
+    <div>
+        <h1 class="header__title" data-i18n="headerTitle">DANFE Online</h1>
+        <span class="header__subtitle" data-i18n="headerSubtitle">Visualização e Geração de DANFE</span>
+    </div>
+    <div class="header__controls">
+        <button class="theme-toggle" id="btn-theme-toggle" aria-label="Alternar tema claro/escuro" title="Alternar tema">
+            <i class="fa-solid fa-moon"></i>
+        </button>
+        <div class="lang-flags" id="lang-flags">
+            <img src="https://flagcdn.com/w40/br.png"
+                 srcset="https://flagcdn.com/w80/br.png 2x"
+                 data-lang="pt" class="lang-flag lang-flag--active"
+                 alt="Português" title="Português (Brasil)">
+            <img src="https://flagcdn.com/w40/us.png"
+                 srcset="https://flagcdn.com/w80/us.png 2x"
+                 data-lang="en" class="lang-flag"
+                 alt="English" title="English (US)">
+            <img src="https://flagcdn.com/w40/mx.png"
+                 srcset="https://flagcdn.com/w80/mx.png 2x"
+                 data-lang="es" class="lang-flag"
+                 alt="Español" title="Español (México)">
+        </div>
+    </div>
+</header>
+
+    <!-- ============================================================
+    MAIN CONTENT
+    ============================================================ -->
+    <main class="container">
+
+        <!-- Tab Navigation -->
+        <nav class="tab-nav" role="tablist" aria-label="Método de entrada">
+            <button class="tab-nav__btn tab-nav__btn--active" role="tab" aria-selected="true"
+                    data-tab="upload" id="tab-btn-upload">
+                <i class="fa-solid fa-file-arrow-up tab-nav__icon"></i>
+                <span class="tab-nav__label" data-i18n="tabUpload">Upload de XML</span>
+            </button>
+            <button class="tab-nav__btn" role="tab" aria-selected="false"
+                    data-tab="consulta" id="tab-btn-consulta">
+                <i class="fa-solid fa-key tab-nav__icon"></i>
+                <span class="tab-nav__label" data-i18n="tabConsulta">Consulta por Chave</span>
+            </button>
+            <button class="tab-nav__btn" role="tab" aria-selected="false"
+                    data-tab="nfe" id="tab-btn-nfe">
+                <i class="fa-solid fa-magnifying-glass-location tab-nav__icon"></i>
+                <span class="tab-nav__label" data-i18n="tabNfe">Consulta NF-e</span>
+            </button>
+        </nav>
+
+        <!-- ============================================================
+        TAB 2: CONSULTA POR CHAVE DE ACESSO
+        ============================================================ -->
+        <section class="tab-panel" id="panel-consulta" role="tabpanel" aria-labelledby="tab-btn-consulta">
+            <div class="card">
+                <h2 class="card__title">
+                    <i class="fa-solid fa-key"></i> <span data-i18n="cardTitle1">Chave de Acesso da NFe</span>
+                </h2>
+                <div class="input-group">
+                    <div class="input-wrapper">
+                        <label class="input-wrapper__label" for="input-chave" data-i18n="inputLabel">
+                            Digite os 44 dígitos da chave de acesso
+                        </label>
+                        <input
+                            type="text"
+                            id="input-chave"
+                            class="input--chave"
+                            placeholder="0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000"
+                            inputmode="numeric"
+                            maxlength="55"
+                            autocomplete="off"
+                            aria-describedby="chave-hint digit-counter"
+                        >
+                        <div class="input-wrapper__hint" id="chave-hint">
+                            <span class="digit-counter digit-counter--incomplete" id="digit-counter">
+                                <i class="fa-solid fa-circle-exclamation"></i>
+                                <span id="digit-count">0</span>/44 <span data-i18n="digitHint1">dígitos</span>
+                            </span>
+                            <span>A chave está no DANFE impresso ou no XML da NFe</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="display:flex;gap:12px;margin-top:18px;flex-wrap:wrap;">
+                    <button class="btn btn--secondary" id="btn-scan">
+                        <i class="fa-solid fa-camera"></i> <span data-i18n="btnScan">Escanear com Câmera</span>
+                    </button>
+                    <button class="btn btn--primary" id="btn-consultar" disabled>
+                        <i class="fa-solid fa-magnifying-glass"></i> <span data-i18n="btnConsultar">Consultar e Gerar PDF</span>
+                    </button>
+                </div>
+
+                <!-- API Fallback Info -->
+                <div class="fallback-box" id="fallback-api" role="alert">
+                    <div class="fallback-box__title">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                        Não foi possível consultar a API
+                    </div>
+                    <div class="fallback-box__text">
+                        <p>A consulta automática via <strong>meudanfe.com.br</strong> não está disponível no momento
+                        (limite de requisições ou falha na API).</p>
+
+                        <p style="margin-top:8px;"><strong>Recomendado:</strong> Use a aba
+                        <strong>"Upload de XML"</strong> — é 100% offline, não depende de APIs externas e é a forma mais
+                        confiável de gerar o DANFE.</p>
+
+                        <button class="btn btn--primary" id="btn-switch-to-upload" style="margin-top:12px;">
+                            <i class="fa-solid fa-file-code"></i> Ir para Upload de XML
+                        </button>
+
+                        <p style="margin-top:12px;font-size:0.85rem;color:var(--color-text-secondary);">
+                            Também é possível consultar diretamente no portal da SEFAZ:
+                        </p>
+                        <a href="https://www.nfe.fazenda.gov.br/portal/consultaRecaptcha.aspx?tipoConsulta=completa&tipoConteudo=3uHcyXG5kYw="
+                           target="_blank" rel="noopener" class="fallback-box__link">
+                            <i class="fa-solid fa-external-link-alt"></i> Consultar no Portal da NFe
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============================================================
+        TAB 3: CONSULTA NF-e — Links por Cidade/Estado
+        ============================================================ -->
+        <section class="tab-panel" id="panel-nfe" role="tabpanel" aria-labelledby="tab-btn-nfe">
+
+            <!-- National Link Banner -->
+            <div class="card nfe-national-banner">
+                <div class="nfe-national-banner__badge">
+                    <i class="fa-solid fa-star"></i> <span data-i18n="nfeNationalBadge">NACIONAL</span>
+                </div>
+                <h2 class="card__title" style="margin-bottom:8px;">
+                    <i class="fa-solid fa-globe-americas"></i> <span data-i18n="nfeNationalTitle">Sistema Nacional — NFS-e</span>
+                </h2>
+                <p class="nfe-national-banner__desc" data-i18n="nfeNationalDesc">
+                    Busca unificada nacional. Todas as notas emitidas por MEIs (Microempreendedores Individuais) do Brasil
+                    inteiro devem ser consultadas aqui, além de notas de empresas cujas prefeituras já aderiram
+                    integralmente ao sistema nacional.
+                </p>
+                <a href="https://www.nfse.gov.br/consultapublica" target="_blank" rel="noopener"
+                   class="nfe-national-banner__link">
+                    <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                    <span data-i18n="nfeNationalLinkText">Acessar Consulta Pública Nacional</span>
+                    <span class="nfe-national-banner__url">nfse.gov.br/consultapublica</span>
+                </a>
+            </div>
+
+            <!-- Filter Input -->
+            <div class="card" style="margin-top:16px;">
+                <h2 class="card__title">
+                    <i class="fa-solid fa-list-check"></i> <span data-i18n="nfeTableTitle">Consultas por Município</span>
+                </h2>
+                <div class="nfe-filter-wrapper">
+                    <i class="fa-solid fa-search nfe-filter-wrapper__icon"></i>
+                    <input
+                        type="text"
+                        id="input-nfe-filter"
+                        class="nfe-filter-wrapper__input"
+                        placeholder="Filtrar por cidade ou estado..."
+                        data-i18n-placeholder="nfeFilterPlaceholder"
+                        autocomplete="off"
+                    >
+                    <button class="nfe-filter-wrapper__clear" id="btn-nfe-filter-clear" title="Limpar filtro" style="display:none;">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+                <div class="nfe-filter-wrapper__results" id="nfe-filter-results">
+                    <span id="nfe-results-count">0</span> <span data-i18n="nfeResultsFound">municípios encontrados</span>
+                </div>
+
+                <!-- Links Table -->
+                <div class="nfe-table-container">
+                    <table class="nfe-links-table" id="nfe-links-table">
+                        <thead>
+                            <tr>
+                                <th data-i18n="nfeTableCity">Cidade</th>
+                                <th data-i18n="nfeTableState">Estado</th>
+                                <th data-i18n="nfeTableSystem">Sistema</th>
+                                <th data-i18n="nfeTableLink">Link</th>
+                            </tr>
+                        </thead>
+                        <tbody id="nfe-links-tbody">
+                            <!-- Populated dynamically by JS -->
+                        </tbody>
+                    </table>
+                </div>
+                <div class="nfe-empty-state" id="nfe-empty-state" style="display:none;">
+                    <i class="fa-solid fa-circle-exclamation"></i>
+                    <span data-i18n="nfeNoResults">Nenhum município encontrado para este filtro.</span>
+                </div>
+
+                <!-- GINFES Tip -->
+                <div class="nfe-ginfes-tip">
+                    <i class="fa-solid fa-circle-info"></i>
+                    <span data-i18n="nfeGinfesTip"><strong>Dica:</strong> Se a nota for de outra cidade que usa GINFES (ex: Santo André, Ribeirão Preto, Bauru), a lógica é a mesma — basta substituir o início do site (<code>cidade.ginfes.com.br</code>). Em qualquer um deles, clique em <strong>"Verificar Autenticidade"</strong>.</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============================================================
+        TAB 1: UPLOAD DE XML
+        ============================================================ -->
+        <section class="tab-panel tab-panel--active" id="panel-upload" role="tabpanel" aria-labelledby="tab-btn-upload">
+            <div class="card">
+                <h2 class="card__title">
+                    <i class="fa-solid fa-file-code"></i> Enviar Arquivo XML da NFe
+                </h2>
+
+                <div class="drop-zone" id="drop-zone" role="button" tabindex="0"
+                     aria-label="Arraste e solte o arquivo XML aqui ou clique para selecionar">
+                    <i class="fa-solid fa-cloud-arrow-up drop-zone__icon"></i>
+                    <p class="drop-zone__text">Arraste o arquivo XML aqui</p>
+                    <p class="drop-zone__subtext">ou clique para selecionar</p>
+                    <div class="drop-zone__file-info" id="file-info">
+                        <i class="fa-solid fa-circle-check"></i>
+                        <span id="file-name"></span>
+                    </div>
+                </div>
+                <input type="file" id="file-input" accept=".xml,text/xml,application/xml" class="sr-only">
+
+                <div style="margin-top:16px;display:flex;gap:12px;flex-wrap:wrap;">
+                    <button class="btn btn--secondary" id="btn-select-file">
+                        <i class="fa-solid fa-folder-open"></i> Selecionar Arquivo
+                    </button>
+                    <button class="btn btn--primary" id="btn-generate-pdf" disabled>
+                        <i class="fa-solid fa-file-pdf"></i> Gerar DANFE (PDF)
+                    </button>
+                </div>
+
+                <!-- Scan access key for SEFAZ lookup -->
+                <div class="scan-key-section">
+                    <div class="scan-key-section__header">
+                        <i class="fa-solid fa-qrcode"></i>
+                        <span>Precisa da chave de acesso?</span>
+                    </div>
+                    <p class="scan-key-section__desc">
+                        Escaneie o código de barras do DANFE para copiar a chave de acesso e usá-la no portal da SEFAZ.
+                    </p>
+                    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+                        <button class="btn btn--secondary btn--sm" id="btn-scan-upload">
+                            <i class="fa-solid fa-camera"></i> Escanear Código de Barras
+                        </button>
+                        <div class="scanned-key-display" id="scanned-key-display" style="display:none;">
+                            <i class="fa-solid fa-circle-check scanned-key-display__icon"></i>
+                            <code class="scanned-key-display__key" id="scanned-key-text"></code>
+                            <button class="btn btn--sm btn--primary" id="btn-copy-key">
+                                <i class="fa-solid fa-copy"></i> Copiar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- "Como obter o XML" help section -->
+                <div class="help-section">
+                    <button class="help-section__toggle" id="btn-help-toggle" aria-expanded="false">
+                        <i class="fa-solid fa-circle-question"></i>
+                        <span>Como obter o XML da NFe?</span>
+                        <i class="fa-solid fa-chevron-down help-section__arrow"></i>
+                    </button>
+                    <div class="help-section__content" id="help-content">
+                        <p class="help-section__intro">
+                            O XML da NFe é o arquivo oficial da nota fiscal eletrônica. Você pode obtê-lo de várias formas:
+                        </p>
+                        <ol class="help-section__list">
+                            <li>
+                                <strong>Portal da SEFAZ</strong> — Acesse o
+                                <a href="https://www.nfe.fazenda.gov.br/portal/consultaRecaptcha.aspx?tipoConsulta=completa&tipoConteudo=3uHcyXG5kYw="
+                                   target="_blank" rel="noopener">Portal Nacional da NFe</a>,
+                                digite a chave de acesso de 44 dígitos e faça o download do XML.
+                            </li>
+                            <li>
+                                <strong>E-mail</strong> — O arquivo XML geralmente é enviado por e-mail junto com o DANFE em PDF.
+                                Procure por mensagens do remetente ou do seu sistema ERP.
+                            </li>
+                            <li>
+                                <strong>Sistema ERP / Emissor de NFe</strong> — Se você usa um sistema como
+                                Nota Fiscal Eletrônica, SPED, ou similar, o XML fica salvo no histórico de notas emitidas.
+                            </li>
+                            <li>
+                                <strong>Portal da SEFAZ Estadual</strong> — Cada estado tem seu próprio portal de consulta
+                                (ex: SEFAZ-SP, SEFAZ-MG, SEFAZ-RJ) onde é possível baixar o XML informando a chave de acesso.
+                            </li>
+                            <li>
+                                <strong>Site do fornecedor</strong> — Muitos fornecedores disponibilizam o XML da sua compra
+                                na área do cliente ou no histórico de pedidos.
+                            </li>
+                        </ol>
+                        <p class="help-section__tip">
+                            <i class="fa-solid fa-lightbulb"></i>
+                            <strong>Dica:</strong> O XML é a forma mais confiável de gerar o DANFE, pois contém todos os dados
+                            oficiais da nota fiscal e funciona 100% offline, sem depender de APIs externas.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============================================================
+        DANFE DOWNLOAD BAR (shown after PDF generation)
+        ============================================================ -->
+        <section class="pdf-section card" id="pdf-section" style="margin-top:20px;">
+            <div class="download-bar">
+                <i class="fa-solid fa-file-pdf download-bar__icon"></i>
+                <div class="download-bar__info">
+                    <div class="download-bar__filename" id="download-filename" data-i18n="downloadReady">DANFE pronto para download</div>
+                    <div class="download-bar__status" data-i18n="downloadSuccess">PDF gerado com sucesso!</div>
+                </div>
+                <button class="btn btn--success" id="btn-download">
+                    <i class="fa-solid fa-download"></i> <span data-i18n="btnDownload">Baixar PDF</span>
+                </button>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ============================================================
+    CAMERA MODAL
+    ============================================================ -->
+    <div class="modal" id="camera-modal" role="dialog" aria-modal="true" aria-labelledby="camera-title">
+        <div class="modal__backdrop" id="modal-backdrop"></div>
+        <div class="modal__content">
+            <div class="modal__header">
+                <h3 class="modal__title" id="camera-title">
+                    <i class="fa-solid fa-camera"></i> Escanear Código de Barras
+                </h3>
+                <button class="modal__close" id="btn-close-camera" aria-label="Fechar câmera">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div class="modal__body">
+                <div class="camera-container">
+                    <div id="camera-reader"></div>
+                </div>
+                <div class="camera-status" id="camera-status">
+                    Posicione o código de barras do DANFE na área de leitura
+                </div>
+                <div class="camera-controls">
+                    <button class="btn btn--sm btn--secondary" id="btn-toggle-camera">
+                        <i class="fa-solid fa-camera-rotate"></i> Alternar Câmera
+                    </button>
+                    <button class="btn btn--sm btn--secondary" id="btn-retry-camera">
+                        <i class="fa-solid fa-rotate"></i> Tentar Novamente
+                    </button>
+                </div>
+                <div class="camera-zoom">
+                    <i class="fa-solid fa-magnifying-glass-minus camera-zoom__icon"></i>
+                    <input type="range" id="zoom-slider" class="camera-zoom__slider"
+                           min="1" max="3" step="0.1" value="1" title="Zoom da câmera">
+                    <i class="fa-solid fa-magnifying-glass-plus camera-zoom__icon"></i>
+                    <span class="camera-zoom__value" id="zoom-value">1.0×</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================
+    LOADING OVERLAY
+    ============================================================ -->
+    <div class="loading-overlay" id="loading-overlay" role="status" aria-live="polite">
+        <div class="spinner"></div>
+        <p class="loading-text" id="loading-text">Processando...</p>
+    </div>
+
+    <!-- ============================================================
+    TOAST CONTAINER
+    ============================================================ -->
+    <div class="toast-container" id="toast-container" aria-live="polite" aria-atomic="false"></div>
+
+    <!-- ============================================================
+    EXTERNAL SCRIPTS (CDN)
+    ============================================================ -->
+    <script src="https://cdn.jsdelivr.net/npm/@ericblade/quagga2@1.8.3/dist/quagga.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.10/pdfmake.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.10/vfs_fonts.min.js"></script>
+
+    <script src="app.js"></script>
+
+</body>
+</html>

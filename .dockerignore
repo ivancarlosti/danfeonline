@@ -1,0 +1,27 @@
+# Git
+.git/
+.github/
+
+# Docker (not needed in the image)
+docker/
+Dockerfile
+.dockerignore
+docker-compose.yml
+
+# Secrets — NEVER bake .env into the image
+.env
+*.env
+
+# Documentation
+README.md
+LICENSE
+*.md
+
+# IDE / OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Plans / notes
+plans/

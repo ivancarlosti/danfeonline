@@ -1,0 +1,9 @@
+services:
+  danfeonline:
+    image: ghcr.io/ivancarlosti/danfeonline:latest
+    container_name: danfeonline_app
+    restart: unless-stopped
+    ports:
+      - "${PORT:-8080}:8080"
+    env_file:
+      - .env
