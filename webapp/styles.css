@@ -1398,6 +1398,46 @@
             background: var(--color-surface);
         }
 
+        /* Dark theme: fix text contrast on primary-colored elements
+           In dark theme, --color-primary becomes light blue (#8ab4f8),
+           so white text is unreadable. Use dark text instead. */
+        body.theme-dark .tab-nav__btn--active {
+            color: #1a1a2e;
+        }
+        body.theme-dark .tab-nav__btn--active:hover {
+            color: #1a1a2e;
+        }
+        body.theme-dark .btn--primary {
+            color: #1a1a2e;
+        }
+        body.theme-dark .btn--primary:hover {
+            color: #1a1a2e;
+        }
+        body.theme-dark .nfe-link-btn {
+            color: #1a1a2e;
+        }
+        body.theme-dark .nfe-link-btn:hover {
+            color: #1a1a2e;
+        }
+        body.theme-dark .nfe-national-banner__link {
+            color: #1a1a2e;
+        }
+        body.theme-dark .nfe-national-banner__link:hover {
+            color: #1a1a2e;
+        }
+        body.theme-dark .nfe-national-banner__badge {
+            color: #1a1a2e;
+        }
+        body.theme-dark .login-form__submit {
+            color: #1a1a2e;
+        }
+        body.theme-dark .login-form__submit:hover {
+            color: #1a1a2e;
+        }
+        body.theme-dark .header__logo {
+            color: #1a1a2e;
+        }
+
         /* =====================================================
            RESPONSIVE — NF-e Table
            ===================================================== */
