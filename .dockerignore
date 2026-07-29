@@ -2,7 +2,7 @@
 .git/
 .github/
 
-# Docker (not needed in the image)
+# Docker (secrets only — kept out of the image)
 docker/
 Dockerfile
 .dockerignore

@@ -1,6 +1,6 @@
 <?php
 /**
- * Router script for PHP built-in web server.
+ * Router script — works with both PHP built-in server and nginx + PHP-FPM.
  *
  * Enforces authentication on EVERY incoming request before serving
  * any file — static (HTML, CSS, JS) or dynamic (PHP).
@@ -8,7 +8,9 @@
  * Whitelisted paths (/login.html, /login.php, /logout.php) bypass
  * auth to allow the login form to render.
  *
- * Usage: php -S 0.0.0.0:8080 router.php
+ * Usage:
+ *   php -S 0.0.0.0:8080 router.php          (development)
+ *   nginx → fastcgi_pass → router.php        (production)
  */
 
 require_once __DIR__ . '/auth.php';
@@ -72,5 +74,38 @@ if (pathinfo($realFile, PATHINFO_EXTENSION) === 'php') {
     return true;
 }
 
-// ── Static file: let PHP built-in server handle it ─────────
-return false;
+// ── Static file: serve it directly (nginx + php-fpm) ───────
+if (is_file($realFile)) {
+    $mimeTypes = [
+        'html' => 'text/html',
+        'css'  => 'text/css',
+        'js'   => 'application/javascript',
+        'json' => 'application/json',
+        'png'  => 'image/png',
+        'jpg'  => 'image/jpeg',
+        'jpeg' => 'image/jpeg',
+        'gif'  => 'image/gif',
+        'svg'  => 'image/svg+xml',
+        'ico'  => 'image/x-icon',
+        'woff'  => 'font/woff',
+        'woff2' => 'font/woff2',
+        'ttf'   => 'font/ttf',
+        'eot'   => 'application/vnd.ms-fontobject',
+        'pdf'   => 'application/pdf',
+        'xml'   => 'application/xml',
+        'txt'   => 'text/plain',
+    ];
+    $ext = strtolower(pathinfo($realFile, PATHINFO_EXTENSION));
+    $mime = $mimeTypes[$ext] ?? 'application/octet-stream';
+
+    header('Content-Type: ' . $mime);
+    header('Content-Length: ' . filesize($realFile));
+    header('Cache-Control: public, max-age=3600');
+    readfile($realFile);
+    return true;
+}
+
+// File not found
+http_response_code(404);
+echo 'Not Found';
+return true;

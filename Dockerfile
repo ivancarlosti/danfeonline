@@ -1,21 +1,37 @@
-FROM php:8.3-cli-alpine
+FROM php:8.3-fpm-alpine
 
-# Create non-root user for security
+# Install nginx (Alpine package)
+RUN apk add --no-cache nginx
+
+# Create non-root user for both nginx and php-fpm
 RUN adduser -D -u 1000 -h /app phpuser
 
+# ── Nginx configuration ─────────────────────────────────────
+COPY config/nginx.conf /etc/nginx/http.d/default.conf
+
+# Fix nginx user: Alpine nginx runs as 'nginx' user by default,
+# switch to phpuser so file permissions align
+RUN sed -i 's/^user nginx;/user phpuser;/' /etc/nginx/nginx.conf
+
+# Create nginx runtime directories and set ownership
+RUN mkdir -p /var/log/nginx /var/lib/nginx/tmp/client_body \
+    && touch /var/log/nginx/access.log /var/log/nginx/error.log \
+    && chown -R phpuser:phpuser /var/log/nginx /var/lib/nginx
+
+# ── PHP-FPM configuration ───────────────────────────────────
+COPY config/www.conf /usr/local/etc/php-fpm.d/www.conf
+
+# ── Application ─────────────────────────────────────────────
 WORKDIR /app
-
-# Copy only webapp files (Dockerfile, .env, docker/ stay out via .dockerignore)
 COPY webapp/ /app/
-
-# Set proper ownership
 RUN chown -R phpuser:phpuser /app
 
-# Drop privileges
-USER phpuser
+# ── Entrypoint ──────────────────────────────────────────────
+COPY config/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
 
 EXPOSE 8080
 
-# PHP built-in server with router: every request goes through router.php
-# which enforces authentication before serving any file
-CMD ["php", "-S", "0.0.0.0:8080", "router.php"]
+USER phpuser
+
+ENTRYPOINT ["/entrypoint.sh"]
