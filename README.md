@@ -31,6 +31,11 @@ A modern, progressive web application for generating and visualizing Brazilian e
 - **Meu Danfe API Integration** — Server-side PHP proxy forwards access keys to the Meu Danfe API v2, retrieves the official DANFE PDF, and returns it to the browser.
 - **Smart Retry Logic** — If the NFe is not yet in the account, the proxy automatically adds it via the API and polls until the SEFAZ query completes (up to 30 seconds).
 
+### 🏢 CNPJ Lookup (CNPJá API)
+- **Company (Empresa)** — Look up a company by CNPJ via the CNPJá `/office` endpoint: legal name, trade name, status, founding date, main activity, legal nature, size, and address.
+- **Partners (Sócios)** — Look up a person by CPF via the CNPJá `/person` endpoint and list the companies they participate in as partner, with role, entry date, and capital.
+- **Browser History** — Recent lookups are persisted in `localStorage` and can be re-run with one click — no server-side database required.
+
 ### 📸 Camera Barcode Scanner
 - **Quagga2 Barcode Detection** — Scan the 44-digit access key directly from the DANFE barcode using your device's camera (Code 128 and Code 39).
 - **Dual Context** — Use the scanner from the "Search by Key" tab (auto-fills the input) or from the "Upload XML" tab (copies the key for SEFAZ portal use).
@@ -101,6 +106,8 @@ Three auth modes configurable via environment variable:
 
 3. **Barcode Path:** Camera opens → Quagga2 scans Code 128/39 barcode → extracts 44 digits → auto-fills input or copies to clipboard → user proceeds with online lookup or manual SEFAZ consultation.
 
+4. **CNPJ Lookup Path (Online):** User selects the "Consulta CNPJ" tab and one of its sub-tabs (Empresa or Sócios) → enters a 14-digit CNPJ or 11-digit CPF → `app.js` POSTs `{ type, taxId }` to `cnpja-proxy.php` → `auth.php` validates credentials → `cnpja-proxy.php` calls the CNPJá API (`GET /office/{cnpj}` or `GET /person/{cpf}`) with the `Authorization` header → returns the JSON response for rendering. Successful lookups are stored in `localStorage` history.
+
 ### Project Structure
 
 ```
@@ -112,6 +119,7 @@ danfeonline/
 │   ├── router.php                # PHP router: enforces auth on every request
 │   ├── auth.php                  # Authentication module (session/OIDC)
 │   ├── proxy.php                 # Server-side CORS proxy for Meu Danfe API
+│   ├── cnpja-proxy.php           # Server-side CORS proxy for CNPJá API
 │   ├── login.html                # Login form page (account mode)
 │   ├── login.php                 # Login handler (validates credentials)
 │   └── logout.php                # Logout handler (destroys session)
@@ -162,6 +170,11 @@ API_BASE=https://api.meudanfe.com.br/v2
 API_KEY=your-api-key-here
 API_TIMEOUT=60
 
+# CNPJá API (required for CNPJ/CPF lookups)
+CNPJA_API_BASE=https://api.cnpja.com
+CNPJA_API_KEY=your-cnpja-api-key-here
+CNPJA_API_TIMEOUT=30
+
 # Authentication
 AUTH_METHOD=account
 ACCOUNT_LOGIN=admin
@@ -198,6 +211,14 @@ The default tab is "Upload XML" — drop an NFe XML file to instantly generate a
 | `API_BASE` | No | `https://api.meudanfe.com.br/v2` | Meu Danfe API base URL |
 | `API_KEY` | No* | — | Your Meu Danfe API key (*required for online lookups) |
 | `API_TIMEOUT` | No | `60` | Seconds before timing out SEFAZ queries |
+
+### CNPJá API
+
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `CNPJA_API_BASE` | No | `https://api.cnpja.com` | CNPJá API base URL |
+| `CNPJA_API_KEY` | No* | — | Your CNPJá API key (*required for CNPJ lookups) |
+| `CNPJA_API_TIMEOUT` | No | `30` | Seconds before timing out CNPJá queries |
 
 ### Authentication
 
@@ -298,6 +319,10 @@ server {
 
 **Online lookup fails with "Server configuration error":**
 - Ensure `API_KEY` is set in `docker/.env` and is a valid Meu Danfe API key.
+- Restart the container after changing `.env`: `docker compose restart`
+
+**CNPJ lookup fails with "Server configuration error":**
+- Ensure `CNPJA_API_KEY` is set in `docker/.env` and is a valid CNPJá API key.
 - Restart the container after changing `.env`: `docker compose restart`
 
 **Online lookup returns 402 (no credits):**

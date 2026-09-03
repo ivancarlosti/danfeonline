@@ -72,6 +72,11 @@ HEADER
                 <i class="fa-solid fa-magnifying-glass-location tab-nav__icon"></i>
                 <span class="tab-nav__label" data-i18n="tabNfe">Consulta NF-e</span>
             </button>
+            <button class="tab-nav__btn" role="tab" aria-selected="false"
+                    data-tab="cnpja" id="tab-btn-cnpja">
+                <i class="fa-solid fa-building tab-nav__icon"></i>
+                <span class="tab-nav__label" data-i18n="tabCnpja">Consulta CNPJ</span>
+            </button>
         </nav>
 
         <!-- ============================================================
@@ -220,6 +225,102 @@ HEADER
                 <div class="nfe-ginfes-tip">
                     <i class="fa-solid fa-circle-info"></i>
                     <span data-i18n="nfeGinfesTip"><strong>Dica:</strong> Se a nota for de outra cidade que usa GINFES (ex: Santo André, Ribeirão Preto, Bauru), a lógica é a mesma — basta substituir o início do site (<code>cidade.ginfes.com.br</code>). Em qualquer um deles, clique em <strong>"Verificar Autenticidade"</strong>.</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============================================================
+        TAB 4: CONSULTA CNPJ (CNPJá API)
+        ============================================================ -->
+        <section class="tab-panel" id="panel-cnpja" role="tabpanel" aria-labelledby="tab-btn-cnpja">
+            <div class="card">
+                <h2 class="card__title">
+                    <i class="fa-solid fa-magnifying-glass-chart"></i>
+                    <span data-i18n="cnpjaTitle">Consulta CNPJ</span>
+                </h2>
+
+                <!-- Sub-tab Navigation -->
+                <nav class="cnpja-subtabs" role="tablist" aria-label="Consulta CNPJ">
+                    <button class="cnpja-subtab cnpja-subtab--active" role="tab" aria-selected="true"
+                            data-cnpja-subtab="empresa" id="cnpja-tab-btn-empresa">
+                        <i class="fa-solid fa-building"></i>
+                        <span data-i18n="cnpjaSubtabEmpresa">Empresa</span>
+                    </button>
+                    <button class="cnpja-subtab" role="tab" aria-selected="false"
+                            data-cnpja-subtab="socios" id="cnpja-tab-btn-socios">
+                        <i class="fa-solid fa-users"></i>
+                        <span data-i18n="cnpjaSubtabSocios">Sócios</span>
+                    </button>
+                </nav>
+
+                <!-- Sub-tab: Empresa (CNPJ → /office) -->
+                <div class="cnpja-subpanel cnpja-subpanel--active" id="cnpja-panel-empresa"
+                     role="tabpanel" aria-labelledby="cnpja-tab-btn-empresa">
+                    <div class="input-group" style="margin-top:20px;">
+                        <div class="input-wrapper">
+                            <label class="input-wrapper__label" for="input-cnpja-cnpj" data-i18n="cnpjaEmpresaLabel">
+                                Digite o CNPJ da empresa
+                            </label>
+                            <input
+                                type="text"
+                                id="input-cnpja-cnpj"
+                                class="input--chave input--cnpja"
+                                placeholder="00.000.000/0000-00"
+                                data-i18n="cnpjaEmpresaPlaceholder"
+                                data-i18n-attr="placeholder"
+                                inputmode="numeric"
+                                maxlength="18"
+                                autocomplete="off"
+                            >
+                            <div class="input-wrapper__hint" data-i18n="cnpjaEmpresaHint">
+                                Consulta de dados cadastrais e situação na Receita Federal
+                            </div>
+                        </div>
+                    </div>
+                    <div style="display:flex;gap:12px;margin-top:18px;flex-wrap:wrap;">
+                        <button class="btn btn--primary" id="btn-cnpja-consultar-empresa" disabled>
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                            <span data-i18n="cnpjaBtnConsultar">Consultar</span>
+                        </button>
+                    </div>
+                    <div class="cnpja-error" id="cnpja-error-empresa" role="alert"></div>
+                    <div class="cnpja-result" id="cnpja-result-empresa"></div>
+                    <div class="cnpja-history" id="cnpja-history-empresa"></div>
+                </div>
+
+                <!-- Sub-tab: Sócios (CPF → /person) -->
+                <div class="cnpja-subpanel" id="cnpja-panel-socios"
+                     role="tabpanel" aria-labelledby="cnpja-tab-btn-socios">
+                    <div class="input-group" style="margin-top:20px;">
+                        <div class="input-wrapper">
+                            <label class="input-wrapper__label" for="input-cnpja-cpf" data-i18n="cnpjaSociosLabel">
+                                Digite o CPF do sócio
+                            </label>
+                            <input
+                                type="text"
+                                id="input-cnpja-cpf"
+                                class="input--chave input--cnpja"
+                                placeholder="000.000.000-00"
+                                data-i18n="cnpjaSociosPlaceholder"
+                                data-i18n-attr="placeholder"
+                                inputmode="numeric"
+                                maxlength="14"
+                                autocomplete="off"
+                            >
+                            <div class="input-wrapper__hint" data-i18n="cnpjaSociosHint">
+                                Consulta de pessoas e empresas das quais participa como sócio
+                            </div>
+                        </div>
+                    </div>
+                    <div style="display:flex;gap:12px;margin-top:18px;flex-wrap:wrap;">
+                        <button class="btn btn--primary" id="btn-cnpja-consultar-socios" disabled>
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                            <span data-i18n="cnpjaBtnConsultar">Consultar</span>
+                        </button>
+                    </div>
+                    <div class="cnpja-error" id="cnpja-error-socios" role="alert"></div>
+                    <div class="cnpja-result" id="cnpja-result-socios"></div>
+                    <div class="cnpja-history" id="cnpja-history-socios"></div>
                 </div>
             </div>
         </section>

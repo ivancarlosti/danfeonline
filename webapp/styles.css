@@ -881,6 +881,254 @@
         .fallback-box__link:hover { text-decoration: underline; }
 
         /* ============================================================
+           CNPJÁ LOOKUP (Consulta CNPJ)
+           ============================================================ */
+        .cnpja-subtabs {
+            display: flex;
+            gap: 4px;
+            background: var(--color-surface-alt);
+            border: 1px solid var(--color-border-light);
+            border-radius: var(--radius-sm);
+            padding: 4px;
+            margin-top: 4px;
+        }
+
+        .cnpja-subtab {
+            flex: 1;
+            padding: 10px 16px;
+            border: none;
+            background: transparent;
+            border-radius: var(--radius-xs);
+            font-family: var(--font-sans);
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--color-text-secondary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all var(--transition-fast);
+        }
+
+        .cnpja-subtab:hover { background: var(--color-surface); color: var(--color-text); }
+
+        .cnpja-subtab--active {
+            background: var(--color-primary);
+            color: #fff;
+            box-shadow: var(--shadow-xs);
+        }
+
+        .cnpja-subtab--active:hover { background: var(--color-primary-hover); color: #fff; }
+
+        .cnpja-subpanel { display: none; }
+        .cnpja-subpanel--active { display: block; animation: fadeSlideIn 0.25s ease; }
+
+        .input--cnpja { letter-spacing: 1px; font-size: 1rem; }
+
+        .cnpja-error {
+            display: none;
+            margin-top: 16px;
+            padding: 12px 16px;
+            background: var(--color-error-light);
+            color: var(--color-error);
+            border-radius: var(--radius-sm);
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .cnpja-error--visible { display: block; animation: fadeSlideIn 0.25s ease; }
+
+        .cnpja-result { margin-top: 20px; }
+
+        .cnpja-result__grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 12px;
+        }
+
+        .cnpja-result__item {
+            background: var(--color-surface-alt);
+            border: 1px solid var(--color-border-light);
+            border-radius: var(--radius-sm);
+            padding: 12px 14px;
+        }
+
+        .cnpja-result__label {
+            display: block;
+            font-size: 0.72rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            color: var(--color-text-muted);
+            margin-bottom: 4px;
+        }
+
+        .cnpja-result__value {
+            font-size: 0.95rem;
+            color: var(--color-text);
+            word-break: break-word;
+        }
+
+        .cnpja-result__empty {
+            padding: 16px;
+            background: var(--color-surface-alt);
+            border: 1px dashed var(--color-border);
+            border-radius: var(--radius-sm);
+            color: var(--color-text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+        }
+
+        .cnpja-result__subtitle {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--color-text);
+            margin: 20px 0 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .cnpja-result__subtitle i { color: var(--color-primary); }
+
+        .cnpja-company-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .cnpja-company-item {
+            background: var(--color-surface-alt);
+            border: 1px solid var(--color-border-light);
+            border-radius: var(--radius-sm);
+            padding: 14px 16px;
+        }
+
+        .cnpja-company-item__header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .cnpja-company-item__header strong {
+            font-size: 0.95rem;
+            color: var(--color-text);
+        }
+
+        .cnpja-company-item__taxid {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--color-text-secondary);
+            background: var(--color-surface);
+            border: 1px solid var(--color-border-light);
+            padding: 2px 8px;
+            border-radius: var(--radius-xs);
+        }
+
+        .cnpja-company-item__body {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px 18px;
+            margin-top: 10px;
+            font-size: 0.85rem;
+            color: var(--color-text-secondary);
+        }
+
+        .cnpja-company-item__body span {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .cnpja-company-item__body i { color: var(--color-primary); }
+
+        .cnpja-history { margin-top: 24px; }
+
+        .cnpja-history__header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+
+        .cnpja-history__title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--color-text-secondary);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .cnpja-history__title i { color: var(--color-primary); }
+
+        .cnpja-history__clear {
+            border: none;
+            background: none;
+            color: var(--color-text-muted);
+            font-family: var(--font-sans);
+            font-size: 0.8rem;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: color var(--transition-fast);
+        }
+
+        .cnpja-history__clear:hover { color: var(--color-error); }
+
+        .cnpja-history__list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .cnpja-history__item {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 12px;
+            border: 1px solid var(--color-border-light);
+            border-radius: var(--radius-sm);
+            background: var(--color-surface-alt);
+            cursor: pointer;
+            font-family: var(--font-sans);
+            font-size: 0.82rem;
+            color: var(--color-text);
+            transition: all var(--transition-fast);
+        }
+
+        .cnpja-history__item:hover {
+            border-color: var(--color-primary);
+            background: var(--color-primary-light);
+        }
+
+        .cnpja-history__item-label { font-weight: 500; }
+
+        .cnpja-history__item-taxid {
+            font-family: var(--font-mono);
+            font-size: 0.78rem;
+            color: var(--color-text-muted);
+        }
+
+        .cnpja-history__empty {
+            font-size: 0.85rem;
+            color: var(--color-text-muted);
+        }
+
+        @media (max-width: 600px) {
+            .cnpja-company-item__body { flex-direction: column; gap: 6px; }
+            .cnpja-history__item { width: 100%; justify-content: space-between; }
+        }
+
+        /* ============================================================
            RESPONSIVE
            ============================================================ */
         @media (max-width: 768px) {
