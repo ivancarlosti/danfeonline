@@ -253,27 +253,25 @@ HEADER
                     </button>
                 </nav>
 
-                <!-- Sub-tab: Empresa (CNPJ → /office) -->
+                <!-- Sub-tab: Empresa -->
                 <div class="cnpja-subpanel cnpja-subpanel--active" id="cnpja-panel-empresa"
                      role="tabpanel" aria-labelledby="cnpja-tab-btn-empresa">
                     <div class="input-group" style="margin-top:20px;">
                         <div class="input-wrapper">
-                            <label class="input-wrapper__label" for="input-cnpja-cnpj" data-i18n="cnpjaEmpresaLabel">
-                                Digite o CNPJ da empresa
+                            <label class="input-wrapper__label" for="input-cnpja-empresa" data-i18n="cnpjaEmpresaLabel">
+                                CNPJ ou nome da empresa
                             </label>
                             <input
                                 type="text"
-                                id="input-cnpja-cnpj"
+                                id="input-cnpja-empresa"
                                 class="input--chave input--cnpja"
-                                placeholder="00.000.000/0000-00"
+                                placeholder="CNPJ, razão social ou nome fantasia"
                                 data-i18n="cnpjaEmpresaPlaceholder"
                                 data-i18n-attr="placeholder"
-                                inputmode="numeric"
-                                maxlength="18"
                                 autocomplete="off"
                             >
                             <div class="input-wrapper__hint" data-i18n="cnpjaEmpresaHint">
-                                Consulta de dados cadastrais e situação na Receita Federal
+                                Informe um CNPJ para abrir o cadastro ou um nome para buscar opções
                             </div>
                         </div>
                     </div>
@@ -288,27 +286,25 @@ HEADER
                     <div class="cnpja-history" id="cnpja-history-empresa"></div>
                 </div>
 
-                <!-- Sub-tab: Sócios (CPF → /person) -->
+                <!-- Sub-tab: Sócios -->
                 <div class="cnpja-subpanel" id="cnpja-panel-socios"
                      role="tabpanel" aria-labelledby="cnpja-tab-btn-socios">
                     <div class="input-group" style="margin-top:20px;">
                         <div class="input-wrapper">
-                            <label class="input-wrapper__label" for="input-cnpja-cpf" data-i18n="cnpjaSociosLabel">
-                                Digite o CPF do sócio
+                            <label class="input-wrapper__label" for="input-cnpja-socio" data-i18n="cnpjaSociosLabel">
+                                CPF ou nome do sócio
                             </label>
                             <input
                                 type="text"
-                                id="input-cnpja-cpf"
+                                id="input-cnpja-socio"
                                 class="input--chave input--cnpja"
-                                placeholder="000.000.000-00"
+                                placeholder="CPF ou nome do sócio"
                                 data-i18n="cnpjaSociosPlaceholder"
                                 data-i18n-attr="placeholder"
-                                inputmode="numeric"
-                                maxlength="14"
                                 autocomplete="off"
                             >
                             <div class="input-wrapper__hint" data-i18n="cnpjaSociosHint">
-                                Consulta de pessoas e empresas das quais participa como sócio
+                                Informe um CPF ou nome para buscar pessoas e suas participações
                             </div>
                         </div>
                     </div>

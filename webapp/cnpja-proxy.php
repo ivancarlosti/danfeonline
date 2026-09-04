@@ -5,9 +5,11 @@
  * Browser → cnpja-proxy.php (same origin, no CORS)
  * cnpja-proxy.php → api.cnpja.com (server-to-server, no CORS)
  *
- * Supported lookups:
- *   - office: GET /office/{cnpj}  (company lookup)
- *   - person: GET /person/{cpf}   (person + companies/sócios lookup)
+ * Supported actions (JSON body):
+ *   - office:         GET /office/{cnpj}                     (CNPJ detail)
+ *   - office-search:  GET /office?names.in={query}&limit=20  (name/fantasy search)
+ *   - person-search:  GET /person?taxId.in={cpf}&limit=20    (CPF search)
+ *                     GET /person?name.in={name}&limit=20    (name search)
  *
  * All credentials are read from environment variables (set via docker/.env).
  * NEVER hardcode API keys in this file.
@@ -71,48 +73,63 @@ if (!$json) {
     exit;
 }
 
-$type   = strtolower($json['type'] ?? '');
-$taxId  = preg_replace('/\D/', '', (string)($json['taxId'] ?? ''));
+$action = strtolower((string)($json['action'] ?? ''));
 
-// ── Validate lookup type ─────────────────────────────────
-$allowedTypes = [
-    'office' => ['digits' => 14, 'label' => 'CNPJ'],
-    'person' => ['digits' => 11, 'label' => 'CPF'],
-];
+// ── Build upstream path + query per action ───────────────
+$path  = '';
+$query = [];
 
-if (!isset($allowedTypes[$type])) {
-    http_response_code(400);
-    header('Content-Type: application/json');
-    header('Access-Control-Allow-Origin: *');
-    echo json_encode(['error' => 'Invalid type. Send "office" (CNPJ) or "person" (CPF).']);
-    exit;
+switch ($action) {
+    case 'office':
+        $taxId = preg_replace('/\D/', '', (string)($json['taxId'] ?? ''));
+        if (strlen($taxId) !== 14) {
+            json_error(400, 'Invalid CNPJ: must have exactly 14 digits');
+        }
+        $path = '/office/' . rawurlencode($taxId);
+        break;
+
+    case 'office-search':
+        $term = trim((string)($json['query'] ?? ''));
+        if (strlen($term) < 2) {
+            json_error(400, 'Invalid query: must have at least 2 characters');
+        }
+        $path = '/office';
+        $query = ['names.in' => $term, 'limit' => 20];
+        break;
+
+    case 'person-search':
+        $term = trim((string)($json['query'] ?? ''));
+        $digits = preg_replace('/\D/', '', $term);
+
+        // CNPJá stores CPFs partially and matches on digits 4-9,
+        // so a CPF input is handled via the search endpoint.
+        if ($digits !== '' && strlen($digits) === 11) {
+            $path = '/person';
+            $query = ['taxId.in' => $digits, 'limit' => 20];
+        } else {
+            if (strlen($term) < 2) {
+                json_error(400, 'Invalid query: must have at least 2 characters');
+            }
+            $path = '/person';
+            $query = ['name.in' => $term, 'limit' => 20];
+        }
+        break;
+
+    default:
+        json_error(400, 'Invalid action. Send "office", "office-search" or "person-search".');
 }
 
-// ── Validate tax id length ───────────────────────────────
-if (strlen($taxId) !== $allowedTypes[$type]['digits']) {
-    http_response_code(400);
-    header('Content-Type: application/json');
-    header('Access-Control-Allow-Origin: *');
-    echo json_encode([
-        'error' => sprintf(
-            'Invalid %s: must have exactly %d digits',
-            $allowedTypes[$type]['label'],
-            $allowedTypes[$type]['digits']
-        ),
-    ]);
-    exit;
+// ── Build final URL ──────────────────────────────────────
+$url = $apiBase . $path;
+if (!empty($query)) {
+    $url .= '?' . http_build_query($query, '', '&', PHP_QUERY_RFC3986);
 }
 
 // ── Forward GET request to CNPJá API ─────────────────────
 if (!function_exists('curl_init')) {
-    http_response_code(500);
-    header('Content-Type: application/json');
-    header('Access-Control-Allow-Origin: *');
-    echo json_encode(['error' => 'Proxy error', 'detail' => 'cURL extension is not available']);
-    exit;
+    json_error(500, 'Proxy error: cURL extension is not available');
 }
 
-$url = $apiBase . '/' . $type . '/' . rawurlencode($taxId);
 $ch = curl_init($url);
 curl_setopt_array($ch, [
     CURLOPT_HTTPHEADER     => ['Authorization: ' . $apiKey],
@@ -121,21 +138,26 @@ curl_setopt_array($ch, [
     CURLOPT_FOLLOWLOCATION => true,
 ]);
 
-$response   = curl_exec($ch);
-$httpCode   = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
+$response    = curl_exec($ch);
+$httpCode    = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
 $contentType = curl_getinfo($ch, CURLINFO_CONTENT_TYPE);
-$error      = curl_error($ch);
+$error       = curl_error($ch);
 curl_close($ch);
 
 // ── Handle cURL failure ──────────────────────────────────
 if ($error) {
-    http_response_code(502);
-    header('Content-Type: application/json');
-    header('Access-Control-Allow-Origin: *');
-    // Sanitize error: strip API key if it accidentally appears in cURL message
     $safeError = ($apiKey !== '') ? str_replace($apiKey, '[REDACTED]', $error) : $error;
-    echo json_encode(['error' => 'Proxy error', 'detail' => $safeError]);
-    exit;
+    json_error(502, 'Proxy error', $safeError);
+}
+
+// ── Diagnostic log for upstream errors (safe to remove) ──
+if ($httpCode >= 400) {
+    error_log(sprintf(
+        '[cnpja-proxy] upstream error url=%s http=%d body=%s',
+        $url,
+        $httpCode,
+        substr($response, 0, 600)
+    ));
 }
 
 // ── Pass through a successful response ───────────────────
@@ -160,3 +182,18 @@ http_response_code($httpCode);
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 echo json_encode($safeBody);
+
+/**
+ * Emit a JSON error response and stop.
+ */
+function json_error(int $code, string $error, ?string $detail = null): void {
+    http_response_code($code);
+    header('Content-Type: application/json');
+    header('Access-Control-Allow-Origin: *');
+    $payload = ['error' => $error];
+    if ($detail !== null) {
+        $payload['detail'] = $detail;
+    }
+    echo json_encode($payload);
+    exit;
+}

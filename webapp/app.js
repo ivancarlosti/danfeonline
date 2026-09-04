@@ -68,8 +68,8 @@
             cnpjaSubtabBtns: $$('.cnpja-subtab'),
             cnpjaPanelEmpresa: $('#cnpja-panel-empresa'),
             cnpjaPanelSocios: $('#cnpja-panel-socios'),
-            inputCnpj: $('#input-cnpja-cnpj'),
-            inputCpf: $('#input-cnpja-cpf'),
+            inputCnpjaEmpresa: $('#input-cnpja-empresa'),
+            inputCnpjaSocio: $('#input-cnpja-socio'),
             btnConsultarEmpresa: $('#btn-cnpja-consultar-empresa'),
             btnConsultarSocios: $('#btn-cnpja-consultar-socios'),
             cnpjaErrorEmpresa: $('#cnpja-error-empresa'),
@@ -307,13 +307,18 @@
                 cnpjaTitle: 'Consulta CNPJ',
                 cnpjaSubtabEmpresa: 'Empresa',
                 cnpjaSubtabSocios: 'Sócios',
-                cnpjaEmpresaLabel: 'Digite o CNPJ da empresa',
-                cnpjaEmpresaPlaceholder: '00.000.000/0000-00',
-                cnpjaEmpresaHint: 'Consulta de dados cadastrais e situação na Receita Federal',
-                cnpjaSociosLabel: 'Digite o CPF do sócio',
-                cnpjaSociosPlaceholder: '000.000.000-00',
-                cnpjaSociosHint: 'Consulta de pessoas e empresas das quais participa como sócio',
+                cnpjaEmpresaLabel: 'CNPJ ou nome da empresa',
+                cnpjaEmpresaPlaceholder: 'CNPJ, razão social ou nome fantasia',
+                cnpjaEmpresaHint: 'Informe um CNPJ para abrir o cadastro ou um nome para buscar opções',
+                cnpjaSociosLabel: 'CPF ou nome do sócio',
+                cnpjaSociosPlaceholder: 'CPF ou nome do sócio',
+                cnpjaSociosHint: 'Informe um CPF ou nome para buscar pessoas e suas participações',
                 cnpjaBtnConsultar: 'Consultar',
+                cnpjaEmpresaShort: 'Informe um CNPJ válido ou pelo menos 2 caracteres para buscar.',
+                cnpjaSocioShort: 'Informe um CPF válido ou pelo menos 2 caracteres para buscar.',
+                cnpjaResultsTitle: 'Resultados encontrados',
+                cnpjaPartnersTitle: 'Sócios e administradores',
+                cnpjaFieldAge: 'Idade',
                 cnpjaLoading: 'Consultando CNPJá...',
                 cnpjaInvalidCnpj: 'O CNPJ deve ter exatamente 14 dígitos.',
                 cnpjaInvalidCpf: 'O CPF deve ter exatamente 11 dígitos.',
@@ -418,13 +423,18 @@
                 cnpjaTitle: 'CNPJ Lookup',
                 cnpjaSubtabEmpresa: 'Company',
                 cnpjaSubtabSocios: 'Partners',
-                cnpjaEmpresaLabel: 'Enter the company CNPJ',
-                cnpjaEmpresaPlaceholder: '00.000.000/0000-00',
-                cnpjaEmpresaHint: 'Lookup registration data and status with Receita Federal',
-                cnpjaSociosLabel: 'Enter the partner CPF',
-                cnpjaSociosPlaceholder: '000.000.000-00',
-                cnpjaSociosHint: 'Lookup people and the companies they participate in as partners',
+                cnpjaEmpresaLabel: 'Company CNPJ or name',
+                cnpjaEmpresaPlaceholder: 'CNPJ, legal name or trade name',
+                cnpjaEmpresaHint: 'Enter a CNPJ to open the record or a name to search options',
+                cnpjaSociosLabel: 'Partner CPF or name',
+                cnpjaSociosPlaceholder: 'Partner CPF or name',
+                cnpjaSociosHint: 'Enter a CPF or name to search people and their memberships',
                 cnpjaBtnConsultar: 'Search',
+                cnpjaEmpresaShort: 'Enter a valid CNPJ or at least 2 characters to search.',
+                cnpjaSocioShort: 'Enter a valid CPF or at least 2 characters to search.',
+                cnpjaResultsTitle: 'Results found',
+                cnpjaPartnersTitle: 'Partners and officers',
+                cnpjaFieldAge: 'Age',
                 cnpjaLoading: 'Querying CNPJá...',
                 cnpjaInvalidCnpj: 'CNPJ must have exactly 14 digits.',
                 cnpjaInvalidCpf: 'CPF must have exactly 11 digits.',
@@ -529,13 +539,18 @@
                 cnpjaTitle: 'Consulta CNPJ',
                 cnpjaSubtabEmpresa: 'Empresa',
                 cnpjaSubtabSocios: 'Socios',
-                cnpjaEmpresaLabel: 'Ingrese el CNPJ de la empresa',
-                cnpjaEmpresaPlaceholder: '00.000.000/0000-00',
-                cnpjaEmpresaHint: 'Consulta de datos registrales y situación en la Receita Federal',
-                cnpjaSociosLabel: 'Ingrese el CPF del socio',
-                cnpjaSociosPlaceholder: '000.000.000-00',
-                cnpjaSociosHint: 'Consulta de personas y empresas en las que participa como socio',
+                cnpjaEmpresaLabel: 'CNPJ o nombre de la empresa',
+                cnpjaEmpresaPlaceholder: 'CNPJ, razón social o nombre comercial',
+                cnpjaEmpresaHint: 'Informe un CNPJ para abrir el registro o un nombre para buscar opciones',
+                cnpjaSociosLabel: 'CPF o nombre del socio',
+                cnpjaSociosPlaceholder: 'CPF o nombre del socio',
+                cnpjaSociosHint: 'Informe un CPF o nombre para buscar personas y sus participaciones',
                 cnpjaBtnConsultar: 'Consultar',
+                cnpjaEmpresaShort: 'Informe un CNPJ válido o al menos 2 caracteres para buscar.',
+                cnpjaSocioShort: 'Informe un CPF válido o al menos 2 caracteres para buscar.',
+                cnpjaResultsTitle: 'Resultados encontrados',
+                cnpjaPartnersTitle: 'Socios y administradores',
+                cnpjaFieldAge: 'Edad',
                 cnpjaLoading: 'Consultando CNPJá...',
                 cnpjaInvalidCnpj: 'El CNPJ debe tener exactamente 14 dígitos.',
                 cnpjaInvalidCpf: 'El CPF debe tener exactamente 11 dígitos.',
@@ -1874,6 +1889,7 @@
         const CNPJA_API_URL = 'cnpja-proxy.php';
         const CNPJA_HISTORY_KEY = 'danfe-cnpja-history';
         const CNPJA_HISTORY_MAX = 10;
+        let cnpjaPersonRecords = [];
 
         // ----- Sub-tab switching -----
         function switchCnpjaSubtab(subtab) {
@@ -1894,53 +1910,25 @@
             btn.addEventListener('click', () => switchCnpjaSubtab(btn.dataset.cnpjaSubtab));
         });
 
-        // ----- Input masks -----
-        function maskCnpj(digits) {
-            const d = digits.substring(0, 14);
-            let m = d;
-            if (d.length > 2) m = d.slice(0, 2) + '.' + d.slice(2);
-            if (d.length > 5) m = d.slice(0, 2) + '.' + d.slice(2, 5) + '.' + d.slice(5);
-            if (d.length > 8) m = d.slice(0, 2) + '.' + d.slice(2, 5) + '.' + d.slice(5, 8) + '/' + d.slice(8);
-            if (d.length > 12) m = d.slice(0, 2) + '.' + d.slice(2, 5) + '.' + d.slice(5, 8) + '/' + d.slice(8, 12) + '-' + d.slice(12);
-            return m;
+        // ----- Flexible input handling (CNPJ/CPF or free text) -----
+        function updateCnpjaEmpresaInput() {
+            const value = dom.inputCnpjaEmpresa.value.trim();
+            const digits = onlyDigits(value);
+            const isCnpj = digits.length === 14 && value === digits;
+            dom.btnConsultarEmpresa.disabled = !(isCnpj || value.length >= 2);
         }
 
-        function maskCpf(digits) {
-            const d = digits.substring(0, 11);
-            let m = d;
-            if (d.length > 3) m = d.slice(0, 3) + '.' + d.slice(3);
-            if (d.length > 6) m = d.slice(0, 3) + '.' + d.slice(3, 6) + '.' + d.slice(6);
-            if (d.length > 9) m = d.slice(0, 3) + '.' + d.slice(3, 6) + '.' + d.slice(6, 9) + '-' + d.slice(9);
-            return m;
+        function updateCnpjaSocioInput() {
+            const value = dom.inputCnpjaSocio.value.trim();
+            const digits = onlyDigits(value);
+            const isCpf = digits.length === 11 && value === digits;
+            dom.btnConsultarSocios.disabled = !(isCpf || value.length >= 2);
         }
 
-        function updateCnpjaCnpjInput() {
-            const digits = onlyDigits(dom.inputCnpj.value).substring(0, 14);
-            dom.inputCnpj.value = maskCnpj(digits);
-            dom.btnConsultarEmpresa.disabled = digits.length !== 14;
-        }
+        dom.inputCnpjaEmpresa.addEventListener('input', updateCnpjaEmpresaInput);
+        dom.inputCnpjaSocio.addEventListener('input', updateCnpjaSocioInput);
 
-        function updateCnpjaCpfInput() {
-            const digits = onlyDigits(dom.inputCpf.value).substring(0, 11);
-            dom.inputCpf.value = maskCpf(digits);
-            dom.btnConsultarSocios.disabled = digits.length !== 11;
-        }
-
-        dom.inputCnpj.addEventListener('input', updateCnpjaCnpjInput);
-        dom.inputCpf.addEventListener('input', updateCnpjaCpfInput);
-
-        [dom.inputCnpj, dom.inputCpf].forEach(input => {
-            input.addEventListener('keydown', (e) => {
-                const allowed = [8, 46, 37, 38, 39, 40, 9, 27, 13, 35, 36];
-                if (allowed.includes(e.keyCode)) return;
-                if ((e.ctrlKey || e.metaKey) && [65, 67, 86, 88].includes(e.keyCode)) return;
-                if (!/^\d$/.test(e.key)) {
-                    e.preventDefault();
-                }
-            });
-        });
-
-        // ----- Result rendering helpers -----
+        // ----- Rendering helpers -----
         function cnpjaValue(value) {
             if (value === null || value === undefined || value === '') return '—';
             return String(value);
@@ -1954,23 +1942,25 @@
             return '—';
         }
 
+        function cnpjaTextOf(value) {
+            if (value === null || value === undefined || value === '') return '—';
+            if (typeof value === 'object') return value.text || value.name || '—';
+            return String(value);
+        }
+
         function cnpjaAddress(data) {
             const a = (data && data.address) || {};
-            const street = a.street || a.address || '';
-            const number = a.number || a.numero || '';
-            const district = a.district || a.neighborhood || '';
-            const city = (a.municipality && a.municipality.name) || a.city || '';
-            const state = (a.state && a.state.name) || a.state || '';
-            const zip = a.zip || a.postalCode || '';
-
-            const parts = [];
-            if (street) parts.push(street);
-            if (number) parts.push(number);
-            if (district) parts.push(district);
-            if (city) parts.push(city);
-            if (state) parts.push(state);
-            if (zip) parts.push('CEP: ' + zip);
+            const parts = [a.street, a.number, a.district, a.city || a.municipality, a.state]
+                .filter(v => v !== null && v !== undefined && v !== '');
+            if (a.zip) parts.push('CEP: ' + a.zip);
             return parts.length ? parts.join(' — ') : '—';
+        }
+
+        function formatTaxIdAny(value) {
+            const digits = onlyDigits(String(value || ''));
+            if (digits.length === 14) return formatCNPJ(digits);
+            if (digits.length === 11) return formatCPF(digits);
+            return cnpjaValue(value);
         }
 
         function cnpjaResultGrid(rows) {
@@ -1987,17 +1977,51 @@
             return `<div class="cnpja-result__empty"><i class="fa-solid fa-circle-info"></i> ${escapeHtml(t('cnpjaNoResults'))}</div>`;
         }
 
+        // ----- Office rendering -----
         function renderOfficeResult(data) {
             if (!data || typeof data !== 'object') return cnpjaEmptyResult();
+            if (Array.isArray(data.records)) return renderOfficeSearchResults(data);
+            return renderOfficeDetail(data);
+        }
 
+        function renderOfficeSearchResults(data) {
+            const records = Array.isArray(data.records) ? data.records : [];
+            if (!records.length) return cnpjaEmptyResult();
+
+            const items = records.map(rec => {
+                const company = rec.company || {};
+                const name = company.name || rec.alias || '';
+                const alias = rec.alias || '';
+                const taxId = rec.taxId || '';
+                const status = cnpjaStatusText(rec);
+                const meta = [
+                    alias && alias !== name ? alias : '',
+                    taxId ? formatCNPJ(String(taxId)) : '',
+                    status !== '—' ? status : '',
+                ].filter(Boolean).join(' · ');
+
+                return `
+                    <button class="cnpja-search-item" data-cnpja-office-taxid="${escapeHtml(taxId)}">
+                        <span class="cnpja-search-item__title">${escapeHtml(name || '—')}</span>
+                        <span class="cnpja-search-item__meta">${escapeHtml(meta)}</span>
+                    </button>
+                `;
+            }).join('');
+
+            return `<h3 class="cnpja-result__subtitle"><i class="fa-solid fa-list"></i> ${escapeHtml(t('cnpjaResultsTitle'))}</h3>
+                    <div class="cnpja-search-list">${items}</div>`;
+        }
+
+        function renderOfficeDetail(data) {
             const company = data.company || {};
-            const name = company.name || data.name || '';
-            const alias = company.alias || '';
+            const name = company.name || '';
+            const alias = data.alias || '';
             const taxId = data.taxId || '';
-            const founded = company.founded || data.founded || '';
-            const mainActivity = (data.mainActivity && (data.mainActivity.text || data.mainActivity.name)) || '';
-            const nature = (company.nature && (company.nature.text || company.nature.name)) || '';
-            const size = (company.size && (company.size.text || company.size.name)) || '';
+            const founded = data.founded || '';
+            const mainActivity = cnpjaTextOf(data.mainActivity);
+            const nature = cnpjaTextOf(company.nature);
+            const size = cnpjaTextOf(company.size);
+            const equity = company.equity;
 
             const rows = [
                 [t('cnpjaFieldName'), name],
@@ -2008,56 +2032,115 @@
                 [t('cnpjaFieldMainActivity'), mainActivity],
                 [t('cnpjaFieldNature'), nature],
                 [t('cnpjaFieldSize'), size],
+                [t('cnpjaFieldCapital'), formatCurrency(equity)],
                 [t('cnpjaFieldAddress'), cnpjaAddress(data)],
             ];
 
-            return cnpjaResultGrid(rows);
-        }
-
-        function renderPersonResult(data) {
-            if (!data || typeof data !== 'object') return cnpjaEmptyResult();
-
-            const name = data.name || '';
-            const taxId = data.taxId || '';
-            const birthday = data.birthday || '';
-
-            const rows = [
-                [t('cnpjaFieldName'), name],
-                [t('cnpjaFieldPersonTaxId'), formatCPF(String(taxId))],
-                [t('cnpjaFieldStatus'), cnpjaStatusText(data)],
-            ];
-            if (birthday) {
-                rows.push([t('cnpjaFieldFounded'), formatDate(birthday)]);
-            }
-
             let html = cnpjaResultGrid(rows);
 
-            const companies = Array.isArray(data.companies) ? data.companies : [];
-            if (companies.length) {
-                const cards = companies.map(item => {
-                    const comp = item.company || {};
-                    const compName = comp.name || item.name || '';
-                    const compTaxId = comp.taxId || item.taxId || '';
-                    const role = (item.role && (item.role.text || item.role.name)) || '';
-                    const since = item.since || '';
-                    const capital = item.capital;
+            const members = Array.isArray(company.members) ? company.members : [];
+            if (members.length) {
+                const cards = members.map(member => {
+                    const person = member.person || {};
+                    const personName = person.name || '';
+                    const personTaxId = person.taxId || '';
+                    const role = cnpjaTextOf(member.role);
+                    const since = member.since || '';
 
                     return `
                         <div class="cnpja-company-item">
                             <div class="cnpja-company-item__header">
-                                <strong>${escapeHtml(compName || '—')}</strong>
-                                ${compTaxId ? `<span class="cnpja-company-item__taxid">${escapeHtml(formatCNPJ(String(compTaxId)))}</span>` : ''}
+                                <strong>${escapeHtml(personName || '—')}</strong>
+                                ${personTaxId ? `<span class="cnpja-company-item__taxid">${escapeHtml(formatTaxIdAny(personTaxId))}</span>` : ''}
                             </div>
                             <div class="cnpja-company-item__body">
-                                ${role ? `<span><i class="fa-solid fa-user-tie"></i> ${escapeHtml(role)}</span>` : ''}
+                                ${role !== '—' ? `<span><i class="fa-solid fa-user-tie"></i> ${escapeHtml(role)}</span>` : ''}
                                 ${since ? `<span><i class="fa-solid fa-calendar"></i> ${escapeHtml(formatDate(since))}</span>` : ''}
-                                ${capital !== null && capital !== undefined && capital !== '' ? `<span><i class="fa-solid fa-sack-dollar"></i> ${escapeHtml(formatCurrency(capital))}</span>` : ''}
                             </div>
                         </div>
                     `;
                 }).join('');
 
-                html += `<h3 class="cnpja-result__subtitle"><i class="fa-solid fa-users"></i> ${escapeHtml(t('cnpjaCompanyListTitle'))}</h3>
+                html += `<h3 class="cnpja-result__subtitle"><i class="fa-solid fa-users"></i> ${escapeHtml(t('cnpjaPartnersTitle'))}</h3>
+                         <div class="cnpja-company-list">${cards}</div>`;
+            }
+
+            return html;
+        }
+
+        // ----- Person rendering -----
+        function renderPersonResult(data) {
+            if (!data || typeof data !== 'object') return cnpjaEmptyResult();
+            if (Array.isArray(data.records)) return renderPersonSearchResults(data);
+            return renderPersonDetail(data);
+        }
+
+        function renderPersonSearchResults(data) {
+            const records = Array.isArray(data.records) ? data.records : [];
+            if (!records.length) return cnpjaEmptyResult();
+
+            cnpjaPersonRecords = records;
+
+            const items = records.map(person => {
+                const name = person.name || '';
+                const taxId = person.taxId || '';
+                const age = person.age;
+                const meta = [
+                    taxId ? formatTaxIdAny(taxId) : '',
+                    age !== null && age !== undefined && age !== '' ? `${t('cnpjaFieldAge')}: ${cnpjaValue(age)}` : '',
+                ].filter(Boolean).join(' · ');
+
+                return `
+                    <button class="cnpja-search-item" data-cnpja-person-id="${escapeHtml(person.id || '')}">
+                        <span class="cnpja-search-item__title">${escapeHtml(name || '—')}</span>
+                        <span class="cnpja-search-item__meta">${escapeHtml(meta)}</span>
+                    </button>
+                `;
+            }).join('');
+
+            return `<h3 class="cnpja-result__subtitle"><i class="fa-solid fa-users"></i> ${escapeHtml(t('cnpjaResultsTitle'))}</h3>
+                    <div class="cnpja-search-list">${items}</div>`;
+        }
+
+        function renderPersonDetail(data) {
+            const name = data.name || '';
+            const taxId = data.taxId || '';
+            const age = data.age;
+
+            const rows = [
+                [t('cnpjaFieldName'), name],
+                [t('cnpjaFieldPersonTaxId'), formatTaxIdAny(taxId)],
+            ];
+            if (age !== null && age !== undefined && age !== '') {
+                rows.push([t('cnpjaFieldAge'), age]);
+            }
+
+            let html = cnpjaResultGrid(rows);
+
+            const membership = Array.isArray(data.membership) ? data.membership : [];
+            if (membership.length) {
+                const cards = membership.map(item => {
+                    const comp = item.company || {};
+                    const compName = comp.name || '';
+                    const role = cnpjaTextOf(item.role);
+                    const since = item.since || '';
+                    const equity = comp.equity;
+
+                    return `
+                        <div class="cnpja-company-item">
+                            <div class="cnpja-company-item__header">
+                                <strong>${escapeHtml(compName || '—')}</strong>
+                            </div>
+                            <div class="cnpja-company-item__body">
+                                ${role !== '—' ? `<span><i class="fa-solid fa-user-tie"></i> ${escapeHtml(role)}</span>` : ''}
+                                ${since ? `<span><i class="fa-solid fa-calendar"></i> ${escapeHtml(formatDate(since))}</span>` : ''}
+                                ${equity !== null && equity !== undefined && equity !== '' ? `<span><i class="fa-solid fa-sack-dollar"></i> ${escapeHtml(formatCurrency(equity))}</span>` : ''}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                html += `<h3 class="cnpja-result__subtitle"><i class="fa-solid fa-building"></i> ${escapeHtml(t('cnpjaCompanyListTitle'))}</h3>
                          <div class="cnpja-company-list">${cards}</div>`;
             }
 
@@ -2075,32 +2158,35 @@
             }
         }
 
-        function formatCnpjaTaxId(type, taxId) {
-            const digits = onlyDigits(String(taxId || ''));
-            return type === 'office' ? formatCNPJ(digits) : formatCPF(digits);
-        }
-
-        function buildCnpjaHistoryLabel(type, data) {
-            if (!data || typeof data !== 'object') return '';
-            if (type === 'office') {
-                return (data.company && data.company.name) || data.name || '';
+        function buildCnpjaHistoryLabel(subtab, query, data) {
+            if (subtab === 'empresa') {
+                if (data && data.company && data.company.name) return data.company.name;
+                if (Array.isArray(data && data.records) && data.records.length) {
+                    const rec = data.records[0];
+                    return (rec.company && rec.company.name) || rec.alias || query;
+                }
+                return query;
             }
-            return data.name || '';
+            if (Array.isArray(data && data.records) && data.records.length) {
+                return data.records[0].name || query;
+            }
+            if (data && data.name) return data.name;
+            return query;
         }
 
-        function saveCnpjaHistory(type, taxId, data) {
+        function saveCnpjaHistory(subtab, query, data) {
             try {
                 const history = loadCnpjaHistory();
                 history.unshift({
-                    type,
-                    taxId,
-                    label: buildCnpjaHistoryLabel(type, data),
+                    subtab,
+                    query,
+                    label: buildCnpjaHistoryLabel(subtab, query, data),
                     searchedAt: new Date().toISOString(),
                 });
 
                 const seen = new Set();
                 const deduped = history.filter(item => {
-                    const key = `${item.type}:${item.taxId}`;
+                    const key = `${item.subtab}:${item.query}`;
                     if (seen.has(key)) return false;
                     seen.add(key);
                     return true;
@@ -2110,23 +2196,23 @@
             } catch (_) {}
         }
 
-        function clearCnpjaHistory(type) {
+        function clearCnpjaHistory(subtab) {
             try {
-                const history = loadCnpjaHistory().filter(item => item.type !== type);
+                const history = loadCnpjaHistory().filter(item => item.subtab !== subtab);
                 localStorage.setItem(CNPJA_HISTORY_KEY, JSON.stringify(history));
             } catch (_) {}
             renderCnpjaHistory();
         }
 
         function renderCnpjaHistory() {
-            renderCnpjaHistoryFor('office', dom.cnpjaHistoryEmpresa);
-            renderCnpjaHistoryFor('person', dom.cnpjaHistorySocios);
+            renderCnpjaHistoryFor('empresa', dom.cnpjaHistoryEmpresa);
+            renderCnpjaHistoryFor('socios', dom.cnpjaHistorySocios);
         }
 
-        function renderCnpjaHistoryFor(type, container) {
+        function renderCnpjaHistoryFor(subtab, container) {
             if (!container) return;
 
-            const items = loadCnpjaHistory().filter(item => item.type === type);
+            const items = loadCnpjaHistory().filter(item => item.subtab === subtab);
             if (!items.length) {
                 container.innerHTML = `<div class="cnpja-history__empty">${escapeHtml(t('cnpjaHistoryEmpty'))}</div>`;
                 return;
@@ -2134,17 +2220,17 @@
 
             const rows = items.map(item => `
                 <button class="cnpja-history__item"
-                        data-cnpja-history-type="${escapeHtml(item.type)}"
-                        data-cnpja-history-taxid="${escapeHtml(item.taxId)}">
-                    <span class="cnpja-history__item-label">${escapeHtml(item.label || formatCnpjaTaxId(item.type, item.taxId))}</span>
-                    <span class="cnpja-history__item-taxid">${escapeHtml(formatCnpjaTaxId(item.type, item.taxId))}</span>
+                        data-cnpja-history-subtab="${escapeHtml(item.subtab)}"
+                        data-cnpja-history-query="${escapeHtml(item.query)}">
+                    <span class="cnpja-history__item-label">${escapeHtml(item.label || item.query)}</span>
+                    <span class="cnpja-history__item-taxid">${escapeHtml(item.query)}</span>
                 </button>
             `).join('');
 
             container.innerHTML = `
                 <div class="cnpja-history__header">
                     <span class="cnpja-history__title"><i class="fa-solid fa-clock-rotate-left"></i> ${escapeHtml(t('cnpjaHistoryTitle'))}</span>
-                    <button class="cnpja-history__clear" data-cnpja-history-clear="${escapeHtml(type)}">
+                    <button class="cnpja-history__clear" data-cnpja-history-clear="${escapeHtml(subtab)}">
                         <i class="fa-solid fa-trash-can"></i> ${escapeHtml(t('cnpjaHistoryClear'))}
                     </button>
                 </div>
@@ -2152,7 +2238,7 @@
             `;
         }
 
-        // History click delegation (run query again or clear)
+        // Delegated clicks: history, office search result, person search result
         document.addEventListener('click', (e) => {
             const clearBtn = e.target.closest('[data-cnpja-history-clear]');
             if (clearBtn) {
@@ -2160,68 +2246,69 @@
                 return;
             }
 
-            const item = e.target.closest('[data-cnpja-history-taxid]');
-            if (item) {
-                const type = item.dataset.cnpjaHistoryType;
-                const taxId = item.dataset.cnpjaHistoryTaxid;
-                const subtab = type === 'office' ? 'empresa' : 'socios';
-
+            const historyItem = e.target.closest('[data-cnpja-history-query]');
+            if (historyItem) {
+                const subtab = historyItem.dataset.cnpjaHistorySubtab;
+                const query = historyItem.dataset.cnpjaHistoryQuery;
                 switchCnpjaSubtab(subtab);
-
                 if (subtab === 'empresa') {
-                    dom.inputCnpj.value = formatCnpjaTaxId(type, taxId);
-                    updateCnpjaCnpjInput();
+                    dom.inputCnpjaEmpresa.value = query;
+                    updateCnpjaEmpresaInput();
                 } else {
-                    dom.inputCpf.value = formatCnpjaTaxId(type, taxId);
-                    updateCnpjaCpfInput();
+                    dom.inputCnpjaSocio.value = query;
+                    updateCnpjaSocioInput();
                 }
-
                 consultarCnpja();
-            }
-        });
-
-        // ----- Query -----
-        async function consultarCnpja() {
-            const subtab = state.cnpjaSubtab;
-            const type = subtab === 'empresa' ? 'office' : 'person';
-            const inputEl = subtab === 'empresa' ? dom.inputCnpj : dom.inputCpf;
-            const errorEl = subtab === 'empresa' ? dom.cnpjaErrorEmpresa : dom.cnpjaErrorSocios;
-            const resultEl = subtab === 'empresa' ? dom.cnpjaResultEmpresa : dom.cnpjaResultSocios;
-            const digits = onlyDigits(inputEl.value);
-            const expected = type === 'office' ? 14 : 11;
-            const invalidKey = type === 'office' ? 'cnpjaInvalidCnpj' : 'cnpjaInvalidCpf';
-
-            errorEl.textContent = '';
-            errorEl.classList.remove('cnpja-error--visible');
-
-            if (digits.length !== expected) {
-                errorEl.textContent = t(invalidKey);
-                errorEl.classList.add('cnpja-error--visible');
-                showToast(t(invalidKey), 'warning');
                 return;
             }
 
+            const officeItem = e.target.closest('[data-cnpja-office-taxid]');
+            if (officeItem) {
+                runCnpjaRequest('office', { taxId: officeItem.dataset.cnpjaOfficeTaxid }, 'empresa');
+                return;
+            }
+
+            const personItem = e.target.closest('[data-cnpja-person-id]');
+            if (personItem) {
+                const record = cnpjaPersonRecords.find(p => p.id === personItem.dataset.cnpjaPersonId);
+                if (record) {
+                    dom.cnpjaResultSocios.innerHTML = renderPersonDetail(record);
+                }
+            }
+        });
+
+        // ----- API request -----
+        async function runCnpjaRequest(action, payload, subtab) {
+            const errorEl = subtab === 'empresa' ? dom.cnpjaErrorEmpresa : dom.cnpjaErrorSocios;
+            const resultEl = subtab === 'empresa' ? dom.cnpjaResultEmpresa : dom.cnpjaResultSocios;
+
+            errorEl.textContent = '';
+            errorEl.classList.remove('cnpja-error--visible');
             showLoading(t('cnpjaLoading'));
 
             try {
                 const response = await fetch(CNPJA_API_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ type, taxId: digits }),
+                    body: JSON.stringify({ action, ...payload }),
                 });
 
                 if (!response.ok) {
                     let detail = '';
+                    let constraints = '';
                     try {
                         const errData = await response.json();
                         detail = (errData && (errData.error || errData.message)) || '';
+                        if (Array.isArray(errData && errData.constraints)) {
+                            constraints = errData.constraints.join('; ');
+                        }
                     } catch (_) {}
-                    throw new Error(detail || `HTTP ${response.status}`);
+                    throw new Error(detail || constraints || `HTTP ${response.status}`);
                 }
 
                 const data = await response.json();
-                resultEl.innerHTML = type === 'office' ? renderOfficeResult(data) : renderPersonResult(data);
-                saveCnpjaHistory(type, digits, data);
+                renderCnpjaResult(subtab, data);
+                saveCnpjaHistory(subtab, payload.taxId || payload.query || '', data);
                 renderCnpjaHistory();
             } catch (err) {
                 console.error('CNPJá API error:', err);
@@ -2233,6 +2320,63 @@
             }
         }
 
+        function renderCnpjaResult(subtab, data) {
+            const resultEl = subtab === 'empresa' ? dom.cnpjaResultEmpresa : dom.cnpjaResultSocios;
+            if (subtab === 'empresa') {
+                resultEl.innerHTML = renderOfficeResult(data);
+            } else {
+                cnpjaPersonRecords = Array.isArray(data.records) ? data.records : (data && typeof data === 'object' ? [data] : []);
+                resultEl.innerHTML = renderPersonResult(data);
+            }
+        }
+
+        // ----- Query dispatcher -----
+        async function consultarCnpja() {
+            const subtab = state.cnpjaSubtab;
+            const inputEl = subtab === 'empresa' ? dom.inputCnpjaEmpresa : dom.inputCnpjaSocio;
+            const errorEl = subtab === 'empresa' ? dom.cnpjaErrorEmpresa : dom.cnpjaErrorSocios;
+            const value = inputEl.value.trim();
+            const digits = onlyDigits(value);
+
+            errorEl.textContent = '';
+            errorEl.classList.remove('cnpja-error--visible');
+
+            let action;
+            let payload;
+
+            if (subtab === 'empresa') {
+                if (digits.length === 14 && value === digits) {
+                    action = 'office';
+                    payload = { taxId: digits };
+                } else if (value.length >= 2) {
+                    action = 'office-search';
+                    payload = { query: value };
+                } else {
+                    const msg = t('cnpjaEmpresaShort');
+                    errorEl.textContent = msg;
+                    errorEl.classList.add('cnpja-error--visible');
+                    showToast(msg, 'warning');
+                    return;
+                }
+            } else {
+                if (digits.length === 11 && value === digits) {
+                    action = 'person-search';
+                    payload = { query: digits };
+                } else if (value.length >= 2) {
+                    action = 'person-search';
+                    payload = { query: value };
+                } else {
+                    const msg = t('cnpjaSocioShort');
+                    errorEl.textContent = msg;
+                    errorEl.classList.add('cnpja-error--visible');
+                    showToast(msg, 'warning');
+                    return;
+                }
+            }
+
+            await runCnpjaRequest(action, payload, subtab);
+        }
+
         dom.btnConsultarEmpresa.addEventListener('click', () => {
             state.cnpjaSubtab = 'empresa';
             consultarCnpja();
@@ -2242,13 +2386,13 @@
             consultarCnpja();
         });
 
-        dom.inputCnpj.addEventListener('keydown', (e) => {
+        dom.inputCnpjaEmpresa.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
                 e.preventDefault();
                 consultarCnpja();
             }
         });
-        dom.inputCpf.addEventListener('keydown', (e) => {
+        dom.inputCnpjaSocio.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
                 e.preventDefault();
                 consultarCnpja();
@@ -2275,8 +2419,8 @@
 
             // Initialize CNPJá tab
             switchCnpjaSubtab('empresa');
-            updateCnpjaCnpjInput();
-            updateCnpjaCpfInput();
+            updateCnpjaEmpresaInput();
+            updateCnpjaSocioInput();
             renderCnpjaHistory();
 
             // Pre-render NF-e links table
