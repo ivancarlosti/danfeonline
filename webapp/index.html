@@ -256,30 +256,27 @@ HEADER
                 <!-- Sub-tab: Empresa -->
                 <div class="cnpja-subpanel cnpja-subpanel--active" id="cnpja-panel-empresa"
                      role="tabpanel" aria-labelledby="cnpja-tab-btn-empresa">
-                    <div class="input-group" style="margin-top:20px;">
-                        <div class="input-wrapper">
-                            <label class="input-wrapper__label" for="input-cnpja-empresa" data-i18n="cnpjaEmpresaLabel">
-                                CNPJ ou nome da empresa
-                            </label>
+                    <div class="cnpja-searchbar" style="margin-top:20px;">
+                        <div class="cnpja-searchbar__field">
+                            <i class="fa-solid fa-magnifying-glass cnpja-searchbar__icon"></i>
                             <input
                                 type="text"
                                 id="input-cnpja-empresa"
-                                class="input--chave input--cnpja"
+                                class="cnpja-searchbar__input"
                                 placeholder="CNPJ, razão social ou nome fantasia"
                                 data-i18n="cnpjaEmpresaPlaceholder"
                                 data-i18n-attr="placeholder"
+                                data-i18n-aria="cnpjaEmpresaLabel"
                                 autocomplete="off"
                             >
-                            <div class="input-wrapper__hint" data-i18n="cnpjaEmpresaHint">
-                                Informe um CNPJ para abrir o cadastro ou um nome para buscar opções
-                            </div>
                         </div>
-                    </div>
-                    <div style="display:flex;gap:12px;margin-top:18px;flex-wrap:wrap;">
-                        <button class="btn btn--primary" id="btn-cnpja-consultar-empresa" disabled>
+                        <button class="btn btn--primary cnpja-searchbar__btn" id="btn-cnpja-consultar-empresa" disabled>
                             <i class="fa-solid fa-magnifying-glass"></i>
                             <span data-i18n="cnpjaBtnConsultar">Consultar</span>
                         </button>
+                    </div>
+                    <div class="input-wrapper__hint" data-i18n="cnpjaEmpresaHint" style="margin-top:8px;">
+                        Informe um CNPJ para abrir o cadastro ou um nome para buscar opções
                     </div>
                     <div class="cnpja-error" id="cnpja-error-empresa" role="alert"></div>
                     <div class="cnpja-result" id="cnpja-result-empresa"></div>
@@ -289,30 +286,27 @@ HEADER
                 <!-- Sub-tab: Sócios -->
                 <div class="cnpja-subpanel" id="cnpja-panel-socios"
                      role="tabpanel" aria-labelledby="cnpja-tab-btn-socios">
-                    <div class="input-group" style="margin-top:20px;">
-                        <div class="input-wrapper">
-                            <label class="input-wrapper__label" for="input-cnpja-socio" data-i18n="cnpjaSociosLabel">
-                                CPF ou nome do sócio
-                            </label>
+                    <div class="cnpja-searchbar" style="margin-top:20px;">
+                        <div class="cnpja-searchbar__field">
+                            <i class="fa-solid fa-magnifying-glass cnpja-searchbar__icon"></i>
                             <input
                                 type="text"
                                 id="input-cnpja-socio"
-                                class="input--chave input--cnpja"
+                                class="cnpja-searchbar__input"
                                 placeholder="CPF ou nome do sócio"
                                 data-i18n="cnpjaSociosPlaceholder"
                                 data-i18n-attr="placeholder"
+                                data-i18n-aria="cnpjaSociosLabel"
                                 autocomplete="off"
                             >
-                            <div class="input-wrapper__hint" data-i18n="cnpjaSociosHint">
-                                Informe um CPF ou nome para buscar pessoas e suas participações
-                            </div>
                         </div>
-                    </div>
-                    <div style="display:flex;gap:12px;margin-top:18px;flex-wrap:wrap;">
-                        <button class="btn btn--primary" id="btn-cnpja-consultar-socios" disabled>
+                        <button class="btn btn--primary cnpja-searchbar__btn" id="btn-cnpja-consultar-socios" disabled>
                             <i class="fa-solid fa-magnifying-glass"></i>
                             <span data-i18n="cnpjaBtnConsultar">Consultar</span>
                         </button>
+                    </div>
+                    <div class="input-wrapper__hint" data-i18n="cnpjaSociosHint" style="margin-top:8px;">
+                        Informe um CPF ou nome para buscar pessoas e suas participações
                     </div>
                     <div class="cnpja-error" id="cnpja-error-socios" role="alert"></div>
                     <div class="cnpja-result" id="cnpja-result-socios"></div>

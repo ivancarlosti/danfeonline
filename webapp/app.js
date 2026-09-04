@@ -2002,8 +2002,12 @@
 
                 return `
                     <button class="cnpja-search-item" data-cnpja-office-taxid="${escapeHtml(taxId)}">
-                        <span class="cnpja-search-item__title">${escapeHtml(name || '—')}</span>
-                        <span class="cnpja-search-item__meta">${escapeHtml(meta)}</span>
+                        <span class="cnpja-search-item__avatar"><i class="fa-solid fa-building"></i></span>
+                        <span class="cnpja-search-item__content">
+                            <span class="cnpja-search-item__title">${escapeHtml(name || '—')}</span>
+                            <span class="cnpja-search-item__meta">${escapeHtml(meta)}</span>
+                        </span>
+                        <i class="fa-solid fa-chevron-right cnpja-search-item__chevron"></i>
                     </button>
                 `;
             }).join('');
@@ -2012,67 +2016,62 @@
                     <div class="cnpja-search-list">${items}</div>`;
         }
 
+        function cnpjaStatusClass(text) {
+            const s = String(text || '').toLowerCase();
+            if (s.includes('ativa')) return 'cnpja-badge--success';
+            if (s.includes('baixada') || s.includes('inapta') || s.includes('suspensa') || s.includes('nula')) return 'cnpja-badge--danger';
+            return 'cnpja-badge--neutral';
+        }
+
+        function cnpjaInfoItem(label, value, icon) {
+            return `<div class="cnpja-info-item">
+                <span class="cnpja-info-item__icon"><i class="fa-solid ${icon}"></i></span>
+                <span class="cnpja-info-item__content">
+                    <span class="cnpja-info-item__label">${escapeHtml(label)}</span>
+                    <span class="cnpja-info-item__value">${escapeHtml(cnpjaValue(value))}</span>
+                </span>
+            </div>`;
+        }
+
         function renderOfficeDetail(data) {
             const company = data.company || {};
             const name = company.name || '';
             const alias = data.alias || '';
             const taxId = data.taxId || '';
             const founded = data.founded || '';
+            const status = cnpjaStatusText(data);
             const mainActivity = cnpjaTextOf(data.mainActivity);
             const nature = cnpjaTextOf(company.nature);
             const size = cnpjaTextOf(company.size);
             const equity = company.equity;
 
-            const rows = [
-                [t('cnpjaFieldName'), name],
-                [t('cnpjaFieldAlias'), alias],
-                [t('cnpjaFieldTaxId'), formatCNPJ(String(taxId))],
-                [t('cnpjaFieldStatus'), cnpjaStatusText(data)],
-                [t('cnpjaFieldFounded'), formatDate(founded)],
-                [t('cnpjaFieldMainActivity'), mainActivity],
-                [t('cnpjaFieldNature'), nature],
-                [t('cnpjaFieldSize'), size],
-                [t('cnpjaFieldCapital'), formatCurrency(equity)],
-                [t('cnpjaFieldAddress'), cnpjaAddress(data)],
-            ];
-
-            let html = cnpjaResultGrid(rows);
+            let html = `
+                <div class="cnpja-hero">
+                    <div class="cnpja-hero__main">
+                        <h3 class="cnpja-hero__title">${escapeHtml(name || '—')}</h3>
+                        ${alias ? `<p class="cnpja-hero__subtitle">${escapeHtml(alias)}</p>` : ''}
+                        <div class="cnpja-hero__badges">
+                            <span class="cnpja-badge cnpja-badge--status ${cnpjaStatusClass(status)}"><i class="fa-solid fa-circle"></i> ${escapeHtml(status)}</span>
+                            <span class="cnpja-badge"><i class="fa-solid fa-barcode"></i> ${escapeHtml(formatCNPJ(String(taxId)))}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="cnpja-info-grid">
+                    ${cnpjaInfoItem(t('cnpjaFieldFounded'), formatDate(founded), 'fa-calendar')}
+                    ${cnpjaInfoItem(t('cnpjaFieldMainActivity'), mainActivity, 'fa-briefcase')}
+                    ${cnpjaInfoItem(t('cnpjaFieldNature'), nature, 'fa-scale-balanced')}
+                    ${cnpjaInfoItem(t('cnpjaFieldSize'), size, 'fa-chart-simple')}
+                    ${cnpjaInfoItem(t('cnpjaFieldCapital'), formatCurrency(equity), 'fa-sack-dollar')}
+                    ${cnpjaInfoItem(t('cnpjaFieldAddress'), cnpjaAddress(data), 'fa-location-dot')}
+                </div>`;
 
             const members = Array.isArray(company.members) ? company.members : [];
             if (members.length) {
-                const cards = members.map(member => {
-                    const person = member.person || {};
-                    const personName = person.name || '';
-                    const personTaxId = person.taxId || '';
-                    const role = cnpjaTextOf(member.role);
-                    const since = member.since || '';
-
-                    return `
-                        <div class="cnpja-company-item">
-                            <div class="cnpja-company-item__header">
-                                <strong>${escapeHtml(personName || '—')}</strong>
-                                ${personTaxId ? `<span class="cnpja-company-item__taxid">${escapeHtml(formatTaxIdAny(personTaxId))}</span>` : ''}
-                            </div>
-                            <div class="cnpja-company-item__body">
-                                ${role !== '—' ? `<span><i class="fa-solid fa-user-tie"></i> ${escapeHtml(role)}</span>` : ''}
-                                ${since ? `<span><i class="fa-solid fa-calendar"></i> ${escapeHtml(formatDate(since))}</span>` : ''}
-                            </div>
-                        </div>
-                    `;
-                }).join('');
-
                 html += `<h3 class="cnpja-result__subtitle"><i class="fa-solid fa-users"></i> ${escapeHtml(t('cnpjaPartnersTitle'))}</h3>
-                         <div class="cnpja-company-list">${cards}</div>`;
+                         <div class="cnpja-members">${members.map(renderMemberCard).join('')}</div>`;
             }
 
             return html;
-        }
-
-        // ----- Person rendering -----
-        function renderPersonResult(data) {
-            if (!data || typeof data !== 'object') return cnpjaEmptyResult();
-            if (Array.isArray(data.records)) return renderPersonSearchResults(data);
-            return renderPersonDetail(data);
         }
 
         function renderPersonSearchResults(data) {
@@ -2092,8 +2091,12 @@
 
                 return `
                     <button class="cnpja-search-item" data-cnpja-person-id="${escapeHtml(person.id || '')}">
-                        <span class="cnpja-search-item__title">${escapeHtml(name || '—')}</span>
-                        <span class="cnpja-search-item__meta">${escapeHtml(meta)}</span>
+                        <span class="cnpja-search-item__avatar cnpja-search-item__avatar--person">${escapeHtml(initials(name))}</span>
+                        <span class="cnpja-search-item__content">
+                            <span class="cnpja-search-item__title">${escapeHtml(name || '—')}</span>
+                            <span class="cnpja-search-item__meta">${escapeHtml(meta)}</span>
+                        </span>
+                        <i class="fa-solid fa-chevron-right cnpja-search-item__chevron"></i>
                     </button>
                 `;
             }).join('');
@@ -2107,44 +2110,72 @@
             const taxId = data.taxId || '';
             const age = data.age;
 
-            const rows = [
-                [t('cnpjaFieldName'), name],
-                [t('cnpjaFieldPersonTaxId'), formatTaxIdAny(taxId)],
-            ];
-            if (age !== null && age !== undefined && age !== '') {
-                rows.push([t('cnpjaFieldAge'), age]);
-            }
-
-            let html = cnpjaResultGrid(rows);
+            let html = `
+                <div class="cnpja-hero cnpja-hero--person">
+                    <span class="cnpja-hero__avatar">${escapeHtml(initials(name))}</span>
+                    <div class="cnpja-hero__main">
+                        <h3 class="cnpja-hero__title">${escapeHtml(name || '—')}</h3>
+                        <div class="cnpja-hero__badges">
+                            <span class="cnpja-badge"><i class="fa-solid fa-id-card"></i> ${escapeHtml(formatTaxIdAny(taxId))}</span>
+                            ${age !== null && age !== undefined && age !== '' ? `<span class="cnpja-badge"><i class="fa-solid fa-cake-candles"></i> ${escapeHtml(cnpjaValue(age))}</span>` : ''}
+                        </div>
+                    </div>
+                </div>`;
 
             const membership = Array.isArray(data.membership) ? data.membership : [];
             if (membership.length) {
-                const cards = membership.map(item => {
-                    const comp = item.company || {};
-                    const compName = comp.name || '';
-                    const role = cnpjaTextOf(item.role);
-                    const since = item.since || '';
-                    const equity = comp.equity;
-
-                    return `
-                        <div class="cnpja-company-item">
-                            <div class="cnpja-company-item__header">
-                                <strong>${escapeHtml(compName || '—')}</strong>
-                            </div>
-                            <div class="cnpja-company-item__body">
-                                ${role !== '—' ? `<span><i class="fa-solid fa-user-tie"></i> ${escapeHtml(role)}</span>` : ''}
-                                ${since ? `<span><i class="fa-solid fa-calendar"></i> ${escapeHtml(formatDate(since))}</span>` : ''}
-                                ${equity !== null && equity !== undefined && equity !== '' ? `<span><i class="fa-solid fa-sack-dollar"></i> ${escapeHtml(formatCurrency(equity))}</span>` : ''}
-                            </div>
-                        </div>
-                    `;
-                }).join('');
-
                 html += `<h3 class="cnpja-result__subtitle"><i class="fa-solid fa-building"></i> ${escapeHtml(t('cnpjaCompanyListTitle'))}</h3>
-                         <div class="cnpja-company-list">${cards}</div>`;
+                         <div class="cnpja-members">${membership.map(renderMembershipCard).join('')}</div>`;
             }
 
             return html;
+        }
+
+        function renderMemberCard(member) {
+            const person = member.person || {};
+            const personName = person.name || '';
+            const personTaxId = person.taxId || '';
+            const role = cnpjaTextOf(member.role);
+            const since = member.since || '';
+
+            return `<div class="cnpja-member">
+                <span class="cnpja-member__avatar">${escapeHtml(initials(personName))}</span>
+                <span class="cnpja-member__content">
+                    <span class="cnpja-member__name">${escapeHtml(personName || '—')}</span>
+                    <span class="cnpja-member__meta">
+                        ${personTaxId ? `<span><i class="fa-solid fa-id-card"></i> ${escapeHtml(formatTaxIdAny(personTaxId))}</span>` : ''}
+                        ${role !== '—' ? `<span><i class="fa-solid fa-user-tie"></i> ${escapeHtml(role)}</span>` : ''}
+                        ${since ? `<span><i class="fa-solid fa-calendar"></i> ${escapeHtml(formatDate(since))}</span>` : ''}
+                    </span>
+                </span>
+            </div>`;
+        }
+
+        function renderMembershipCard(item) {
+            const comp = item.company || {};
+            const compName = comp.name || '';
+            const role = cnpjaTextOf(item.role);
+            const since = item.since || '';
+            const equity = comp.equity;
+
+            return `<div class="cnpja-member">
+                <span class="cnpja-member__avatar"><i class="fa-solid fa-building"></i></span>
+                <span class="cnpja-member__content">
+                    <span class="cnpja-member__name">${escapeHtml(compName || '—')}</span>
+                    <span class="cnpja-member__meta">
+                        ${role !== '—' ? `<span><i class="fa-solid fa-user-tie"></i> ${escapeHtml(role)}</span>` : ''}
+                        ${since ? `<span><i class="fa-solid fa-calendar"></i> ${escapeHtml(formatDate(since))}</span>` : ''}
+                        ${equity !== null && equity !== undefined && equity !== '' ? `<span><i class="fa-solid fa-sack-dollar"></i> ${escapeHtml(formatCurrency(equity))}</span>` : ''}
+                    </span>
+                </span>
+            </div>`;
+        }
+
+        function initials(name) {
+            const parts = String(name || '').trim().split(/\s+/).filter(Boolean);
+            if (!parts.length) return '?';
+            if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+            return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
         }
 
         // ----- Local history (localStorage) -----
