@@ -315,6 +315,7 @@
                 cnpjaSociosHint: 'Informe um CPF ou nome para buscar pessoas e suas participações',
                 cnpjaBtnConsultar: 'Consultar',
                 cnpjaEmpresaShort: 'Informe um CNPJ válido ou pelo menos 2 caracteres para buscar.',
+                cnpjaPartialShort: 'Para buscar por parte do CNPJ, informe pelo menos os 8 primeiros dígitos.',
                 cnpjaSocioShort: 'Informe um CPF válido ou pelo menos 2 caracteres para buscar.',
                 cnpjaResultsTitle: 'Resultados encontrados',
                 cnpjaLoadMore: 'Carregar mais',
@@ -432,6 +433,7 @@
                 cnpjaSociosHint: 'Enter a CPF or name to search people and their memberships',
                 cnpjaBtnConsultar: 'Search',
                 cnpjaEmpresaShort: 'Enter a valid CNPJ or at least 2 characters to search.',
+                cnpjaPartialShort: 'To search by partial CNPJ, enter at least the first 8 digits.',
                 cnpjaSocioShort: 'Enter a valid CPF or at least 2 characters to search.',
                 cnpjaResultsTitle: 'Results found',
                 cnpjaLoadMore: 'Load more',
@@ -549,6 +551,7 @@
                 cnpjaSociosHint: 'Informe un CPF o nombre para buscar personas y sus participaciones',
                 cnpjaBtnConsultar: 'Consultar',
                 cnpjaEmpresaShort: 'Informe un CNPJ válido o al menos 2 caracteres para buscar.',
+                cnpjaPartialShort: 'Para buscar por parte del CNPJ, informe al menos los 8 primeros dígitos.',
                 cnpjaSocioShort: 'Informe un CPF válido o al menos 2 caracteres para buscar.',
                 cnpjaResultsTitle: 'Resultados encontrados',
                 cnpjaLoadMore: 'Cargar más',
@@ -1984,18 +1987,55 @@
         }
 
         // ----- Office rendering -----
+        function dedupeByTaxId(records) {
+            if (!Array.isArray(records)) return records;
+            const seen = new Set();
+            return records.filter(rec => {
+                const taxId = rec && rec.taxId;
+                if (taxId && seen.has(taxId)) return false;
+                if (taxId) seen.add(taxId);
+                return true;
+            });
+        }
+
+        function dedupeOfficeRecords(records) {
+            if (!Array.isArray(records)) return records;
+            // Show the matriz first and collapse matriz + branches of the same
+            // company into a single entry (what users perceive as "the company").
+            const ordered = records.slice().sort((a, b) => {
+                const ah = !!(a && a.head);
+                const bh = !!(b && b.head);
+                return bh - ah;
+            });
+            const seenTaxId = new Set();
+            const seenRoot = new Set();
+            return ordered.filter(rec => {
+                const taxId = rec && rec.taxId;
+                const root = rec && rec.company && rec.company.id;
+                if (taxId && seenTaxId.has(taxId)) return false;
+                if (root && seenRoot.has(root)) return false;
+                if (taxId) seenTaxId.add(taxId);
+                if (root) seenRoot.add(root);
+                return true;
+            });
+        }
+
         function renderOfficeResult(data, append) {
             if (!data || typeof data !== 'object') return cnpjaEmptyResult();
             if (Array.isArray(data.records)) {
-                cnpjaOfficeRecords = append ? cnpjaOfficeRecords.concat(data.records) : data.records;
+                const combined = append ? cnpjaOfficeRecords.concat(data.records) : data.records;
+                cnpjaOfficeRecords = dedupeOfficeRecords(combined);
                 cnpjaOfficeNext = data.next || null;
                 return renderOfficeSearchResults({ records: cnpjaOfficeRecords, next: cnpjaOfficeNext });
+            }
+            if (Array.isArray(data.offices)) {
+                return renderCompanyOffices(data);
             }
             return renderOfficeDetail(data);
         }
 
         function renderOfficeSearchResults(data) {
-            const records = Array.isArray(data.records) ? data.records : [];
+            const records = dedupeOfficeRecords(Array.isArray(data.records) ? data.records : []);
             if (!records.length) return cnpjaEmptyResult();
 
             const items = records.map(rec => {
@@ -2028,6 +2068,37 @@
                 html += `<div class="cnpja-loadmore"><button class="btn btn--secondary btn--sm" data-cnpja-loadmore="empresa"><i class="fa-solid fa-plus"></i> ${escapeHtml(t('cnpjaLoadMore'))}</button></div>`;
             }
             return html;
+        }
+
+        function renderCompanyOffices(data) {
+            const companyName = (data && data.name) || '';
+            const offices = dedupeByTaxId(Array.isArray(data.offices) ? data.offices : []);
+            if (!offices.length) return cnpjaEmptyResult();
+
+            const items = offices.map(rec => {
+                const taxId = rec.taxId || '';
+                const alias = rec.alias || '';
+                const status = cnpjaStatusText(rec);
+                const meta = [
+                    taxId ? formatCNPJ(String(taxId)) : '',
+                    rec.head ? 'Matriz' : 'Filial',
+                    status !== '—' ? status : '',
+                ].filter(Boolean).join(' · ');
+
+                return `
+                    <button class="cnpja-search-item" data-cnpja-office-taxid="${escapeHtml(taxId)}">
+                        <span class="cnpja-search-item__avatar"><i class="fa-solid fa-building"></i></span>
+                        <span class="cnpja-search-item__content">
+                            <span class="cnpja-search-item__title">${escapeHtml(alias || companyName || '—')}</span>
+                            <span class="cnpja-search-item__meta">${escapeHtml(meta)}</span>
+                        </span>
+                        <i class="fa-solid fa-chevron-right cnpja-search-item__chevron"></i>
+                    </button>
+                `;
+            }).join('');
+
+            return `<h3 class="cnpja-result__subtitle"><i class="fa-solid fa-building"></i> ${escapeHtml(companyName || t('cnpjaResultsTitle'))}</h3>
+                    <div class="cnpja-search-list">${items}</div>`;
         }
 
         function cnpjaStatusClass(text) {
@@ -2218,6 +2289,7 @@
         function buildCnpjaHistoryLabel(subtab, query, data) {
             if (subtab === 'empresa') {
                 if (data && data.company && data.company.name) return data.company.name;
+                if (data && data.name) return data.name;
                 if (Array.isArray(data && data.records) && data.records.length) {
                     const rec = data.records[0];
                     return (rec.company && rec.company.name) || rec.alias || query;
@@ -2415,9 +2487,23 @@
             let payload;
 
             if (subtab === 'empresa') {
-                if (digits.length === 14 && value === digits) {
+                // Only digits and CNPJ punctuation (no letters) => treat as a CNPJ.
+                const isCnpjLike = /^[\d\s./-]+$/.test(value) && digits.length > 0;
+
+                if (isCnpjLike && digits.length === 14) {
                     action = 'office';
                     payload = { taxId: digits };
+                } else if (isCnpjLike && digits.length >= 8) {
+                    // Partial CNPJ: look up the company by its 8-digit root and
+                    // list its establishments so the user can pick the right one.
+                    action = 'company';
+                    payload = { taxId: digits.substring(0, 8) };
+                } else if (isCnpjLike) {
+                    const msg = t('cnpjaPartialShort');
+                    errorEl.textContent = msg;
+                    errorEl.classList.add('cnpja-error--visible');
+                    showToast(msg, 'warning');
+                    return;
                 } else if (value.length >= 2) {
                     action = 'office-search';
                     payload = { query: value };
@@ -2429,7 +2515,9 @@
                     return;
                 }
             } else {
-                if (digits.length === 11 && value === digits) {
+                const isCpfLike = /^[\d\s.-]+$/.test(value) && digits.length > 0;
+
+                if (isCpfLike && digits.length === 11) {
                     action = 'person-search';
                     payload = { query: digits };
                 } else if (value.length >= 2) {

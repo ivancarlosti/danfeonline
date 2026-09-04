@@ -7,6 +7,7 @@
  *
  * Supported actions (JSON body):
  *   - office:         GET /office/{cnpj}                     (CNPJ detail)
+ *   - company:        GET /company/{root}                    (partial CNPJ root search)
  *   - office-search:  GET /office?names.in={query}&limit=20  (name/fantasy search)
  *   - person-search:  GET /person?taxId.in={cpf}&limit=20    (CPF search)
  *                     GET /person?name.in={name}&limit=20    (name search)
@@ -80,15 +81,23 @@ $path  = '';
 $query = [];
 
 switch ($action) {
-    case 'office':
-        $taxId = preg_replace('/\D/', '', (string)($json['taxId'] ?? ''));
-        if (strlen($taxId) !== 14) {
-            json_error(400, 'Invalid CNPJ: must have exactly 14 digits');
-        }
-        $path = '/office/' . rawurlencode($taxId);
-        break;
+case 'office':
+    $taxId = preg_replace('/\D/', '', (string)($json['taxId'] ?? ''));
+    if (strlen($taxId) !== 14) {
+        json_error(400, 'Invalid CNPJ: must have exactly 14 digits');
+    }
+    $path = '/office/' . rawurlencode($taxId);
+    break;
 
-    case 'office-search':
+case 'company':
+    $root = preg_replace('/\D/', '', (string)($json['taxId'] ?? ''));
+    if (strlen($root) !== 8) {
+        json_error(400, 'Invalid CNPJ root: must have exactly 8 digits');
+    }
+    $path = '/company/' . rawurlencode($root);
+    break;
+
+case 'office-search':
         $token = trim((string)($json['token'] ?? ''));
         if ($token !== '') {
             $path = '/office';
@@ -128,7 +137,7 @@ switch ($action) {
         break;
 
     default:
-        json_error(400, 'Invalid action. Send "office", "office-search" or "person-search".');
+        json_error(400, 'Invalid action. Send "office", "company", "office-search" or "person-search".');
 }
 
 // ── Build final URL ──────────────────────────────────────
