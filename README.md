@@ -1,8 +1,8 @@
-# DANFE Online
+# Fiscal Hub
 
-📄 **DANFE Visualization & Generation — 100% in the Browser**
+📄 **Fiscal documents, DANFE generation & business lookups — in the browser**
 
-A modern, progressive web application for generating and visualizing Brazilian electronic invoice documents (DANFE — Documento Auxiliar da Nota Fiscal Eletrônica). Supports offline XML-to-PDF generation, online API lookup by access key, camera barcode scanning, and a comprehensive municipal NF-e consultation directory — all packaged in a lightweight Docker container.
+Fiscal Hub is a modern, progressive web application for generating and visualizing Brazilian electronic invoice documents (DANFE — Documento Auxiliar da Nota Fiscal Eletrônica). It also provides CNPJ/CPF and partner lookups, offline XML-to-PDF generation, online API lookup by access key, camera barcode scanning, and a comprehensive municipal NF-e consultation directory — all packaged in a lightweight Docker container.
 
 <!-- buttons -->
 [![Stars](https://img.shields.io/github/stars/ivancarlosti/danfeonline?label=⭐%20Stars&color=gold&style=flat)](https://github.com/ivancarlosti/danfeonline/stargazers)
@@ -77,7 +77,7 @@ Three auth modes configurable via environment variable:
 │    Docker Container    │      │   Meu Danfe API v2      │
 │                        │      │   (external, SaaS)      │
 │  ┌──────────────────┐  │      │                         │
-│  │ danfeonline_app  │  │      │  api.meudanfe.com.br    │
+│  │ fiscalhub_app   │  │      │  api.meudanfe.com.br    │
 │  │                  │  │      │                         │
 │  │  ┌────────────┐  │  │      │  GET  /fd/get/da/{key}  │
 │  │  │ index.html │  │  │      │  PUT  /fd/add/{key}     │
@@ -111,7 +111,7 @@ Three auth modes configurable via environment variable:
 ### Project Structure
 
 ```
-danfeonline/
+fiscalhub/
 ├── webapp/
 │   ├── index.html                # Single-page application shell
 │   ├── app.js                    # Core logic: tabs, PDF gen, API, i18n, camera
@@ -163,12 +163,12 @@ AUTH_METHOD=none
 **Full settings (online API + authentication):**
 ```env
 PORT=8080
-DOMAIN=danfeonline.example.com
+DOMAIN=fiscalhub.example.com
 
 # Meu Danfe API v2 (required for access key lookups)
-API_BASE=https://api.meudanfe.com.br/v2
-API_KEY=your-api-key-here
-API_TIMEOUT=60
+MEUDANFE_API_BASE=https://api.meudanfe.com.br/v2
+MEUDANFE_API_KEY=your-api-key-here
+MEUDANFE_API_TIMEOUT=60
 
 # CNPJá API (required for CNPJ/CPF lookups)
 CNPJA_API_BASE=https://api.cnpja.com
@@ -208,9 +208,9 @@ The default tab is "Upload XML" — drop an NFe XML file to instantly generate a
 
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
-| `API_BASE` | No | `https://api.meudanfe.com.br/v2` | Meu Danfe API base URL |
-| `API_KEY` | No* | — | Your Meu Danfe API key (*required for online lookups) |
-| `API_TIMEOUT` | No | `60` | Seconds before timing out SEFAZ queries |
+| `MEUDANFE_API_BASE` | No | `https://api.meudanfe.com.br/v2` | Meu Danfe API base URL |
+| `MEUDANFE_API_KEY` | No* | — | Your Meu Danfe API key (*required for online lookups) |
+| `MEUDANFE_API_TIMEOUT` | No | `60` | Seconds before timing out SEFAZ queries |
 
 ### CNPJá API
 
@@ -259,9 +259,9 @@ Session credentials are compared using `hash_equals()` for timing-attack resista
 AUTH_METHOD=keycloak
 KEYCLOAK_BASE_URL=https://sso.example.com
 KEYCLOAK_REALM=YourRealm
-KEYCLOAK_CLIENT_ID=danfeonline
+KEYCLOAK_CLIENT_ID=fiscalhub
 KEYCLOAK_CLIENT_SECRET=your_client_secret
-KEYCLOAK_REDIRECT_URI=https://danfeonline.example.com/
+KEYCLOAK_REDIRECT_URI=https://fiscalhub.example.com/
 KEYCLOAK_EMAIL_ACCOUNT=you@example.com
 ```
 Bearer token-based authentication. The SPA obtains an access token from Keycloak (via Authorization Code flow with PKCE) and includes it in the `Authorization: Bearer <token>` header. The proxy validates the token against Keycloak's `/userinfo` endpoint. If `KEYCLOAK_EMAIL_ACCOUNT` is set, only that specific email is allowed.
@@ -270,7 +270,7 @@ Bearer token-based authentication. The SPA obtains an access token from Keycloak
 
 ## Reverse Proxy
 
-DANFE Online works seamlessly behind Nginx, Traefik, Caddy, or any reverse proxy:
+Fiscal Hub works seamlessly behind Nginx, Traefik, Caddy, or any reverse proxy:
 
 1. Set `PORT` in `.env` to your desired host port (container internally uses `8080`).
 2. Point your reverse proxy upstream to `localhost:<PORT>`.
@@ -280,7 +280,7 @@ DANFE Online works seamlessly behind Nginx, Traefik, Caddy, or any reverse proxy
 ```nginx
 server {
     listen 443 ssl;
-    server_name danfeonline.example.com;
+    server_name fiscalhub.example.com;
 
     location / {
         proxy_pass http://127.0.0.1:8080;
@@ -318,7 +318,7 @@ server {
 ## Troubleshooting
 
 **Online lookup fails with "Server configuration error":**
-- Ensure `API_KEY` is set in `docker/.env` and is a valid Meu Danfe API key.
+- Ensure `MEUDANFE_API_KEY` is set in `docker/.env` and is a valid Meu Danfe API key.
 - Restart the container after changing `.env`: `docker compose restart`
 
 **CNPJ lookup fails with "Server configuration error":**

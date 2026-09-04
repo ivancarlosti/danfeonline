@@ -1,7 +1,7 @@
 services:
-  danfeonline:
+  fiscalhub:
     image: ghcr.io/ivancarlosti/danfeonline:latest
-    container_name: danfeonline_app
+    container_name: fiscalhub_app
     restart: unless-stopped
     ports:
       - "${PORT:-8080}:8080"

@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-# ── DANFE Online Entrypoint ──────────────────────────────────
+# ── Fiscal Hub Entrypoint ──────────────────────────────────
 # Starts PHP-FPM in background, then nginx in foreground.
 # nginx running in foreground keeps the container alive.
 

@@ -89,6 +89,12 @@ switch ($action) {
         break;
 
     case 'office-search':
+        $token = trim((string)($json['token'] ?? ''));
+        if ($token !== '') {
+            $path = '/office';
+            $query = ['token' => $token, 'limit' => 20];
+            break;
+        }
         $term = trim((string)($json['query'] ?? ''));
         if (strlen($term) < 2) {
             json_error(400, 'Invalid query: must have at least 2 characters');
@@ -98,6 +104,12 @@ switch ($action) {
         break;
 
     case 'person-search':
+        $token = trim((string)($json['token'] ?? ''));
+        if ($token !== '') {
+            $path = '/person';
+            $query = ['token' => $token, 'limit' => 20];
+            break;
+        }
         $term = trim((string)($json['query'] ?? ''));
         $digits = preg_replace('/\D/', '', $term);
 

@@ -25,9 +25,11 @@ if (!auth_check()) {
 }
 
 // ── Load configuration from environment ─────────────────────
-$apiBase    = getenv('API_BASE')    ?: 'https://api.meudanfe.com.br/v2';
-$apiKey     = getenv('API_KEY')     ?: '';
-$apiTimeout = (int)(getenv('API_TIMEOUT') ?: 60);
+// Prefer the MEUDANFE_API_* names; keep legacy API_* names as a
+// backward-compatible fallback for existing deployments.
+$apiBase    = getenv('MEUDANFE_API_BASE')    ?: (getenv('API_BASE')    ?: 'https://api.meudanfe.com.br/v2');
+$apiKey     = getenv('MEUDANFE_API_KEY')     ?: (getenv('API_KEY')     ?: '');
+$apiTimeout = (int)(getenv('MEUDANFE_API_TIMEOUT') ?: (getenv('API_TIMEOUT') ?: 60));
 
 // ── Fail early if API key is missing ────────────────────────
 if ($apiKey === '') {

@@ -227,8 +227,8 @@
         // =====================================================
         const i18n = {
             pt: {
-                headerTitle: 'DANFE Online',
-                headerSubtitle: 'Visualização e Geração de DANFE',
+                headerTitle: 'Fiscal Hub',
+                headerSubtitle: 'Documentos Fiscais e Consultas',
                 tabConsulta: 'Consulta por Chave',
                 tabUpload: 'Upload de XML',
                 inputLabel: 'Digite os 44 dígitos da chave de acesso',
@@ -317,6 +317,7 @@
                 cnpjaEmpresaShort: 'Informe um CNPJ válido ou pelo menos 2 caracteres para buscar.',
                 cnpjaSocioShort: 'Informe um CPF válido ou pelo menos 2 caracteres para buscar.',
                 cnpjaResultsTitle: 'Resultados encontrados',
+                cnpjaLoadMore: 'Carregar mais',
                 cnpjaPartnersTitle: 'Sócios e administradores',
                 cnpjaFieldAge: 'Idade',
                 cnpjaLoading: 'Consultando CNPJá...',
@@ -343,8 +344,8 @@
                 cnpjaCompanyListTitle: 'Empresas como sócio',
             },
             en: {
-                headerTitle: 'DANFE Online',
-                headerSubtitle: 'DANFE Visualization & Generation',
+                headerTitle: 'Fiscal Hub',
+                headerSubtitle: 'Fiscal Documents & Lookups',
                 tabConsulta: 'Search by Key',
                 tabUpload: 'Upload XML',
                 inputLabel: 'Enter the 44-digit access key',
@@ -433,6 +434,7 @@
                 cnpjaEmpresaShort: 'Enter a valid CNPJ or at least 2 characters to search.',
                 cnpjaSocioShort: 'Enter a valid CPF or at least 2 characters to search.',
                 cnpjaResultsTitle: 'Results found',
+                cnpjaLoadMore: 'Load more',
                 cnpjaPartnersTitle: 'Partners and officers',
                 cnpjaFieldAge: 'Age',
                 cnpjaLoading: 'Querying CNPJá...',
@@ -459,8 +461,8 @@
                 cnpjaCompanyListTitle: 'Companies as partner',
             },
             es: {
-                headerTitle: 'DANFE Online',
-                headerSubtitle: 'Visualización y Generación de DANFE',
+                headerTitle: 'Fiscal Hub',
+                headerSubtitle: 'Documentos Fiscales y Consultas',
                 tabConsulta: 'Buscar por Clave',
                 tabUpload: 'Subir XML',
                 inputLabel: 'Ingrese los 44 dígitos de la clave de acceso',
@@ -549,6 +551,7 @@
                 cnpjaEmpresaShort: 'Informe un CNPJ válido o al menos 2 caracteres para buscar.',
                 cnpjaSocioShort: 'Informe un CPF válido o al menos 2 caracteres para buscar.',
                 cnpjaResultsTitle: 'Resultados encontrados',
+                cnpjaLoadMore: 'Cargar más',
                 cnpjaPartnersTitle: 'Socios y administradores',
                 cnpjaFieldAge: 'Edad',
                 cnpjaLoading: 'Consultando CNPJá...',
@@ -1890,6 +1893,9 @@
         const CNPJA_HISTORY_KEY = 'danfe-cnpja-history';
         const CNPJA_HISTORY_MAX = 10;
         let cnpjaPersonRecords = [];
+        let cnpjaOfficeRecords = [];
+        let cnpjaOfficeNext = null;
+        let cnpjaPersonNext = null;
 
         // ----- Sub-tab switching -----
         function switchCnpjaSubtab(subtab) {
@@ -1978,9 +1984,13 @@
         }
 
         // ----- Office rendering -----
-        function renderOfficeResult(data) {
+        function renderOfficeResult(data, append) {
             if (!data || typeof data !== 'object') return cnpjaEmptyResult();
-            if (Array.isArray(data.records)) return renderOfficeSearchResults(data);
+            if (Array.isArray(data.records)) {
+                cnpjaOfficeRecords = append ? cnpjaOfficeRecords.concat(data.records) : data.records;
+                cnpjaOfficeNext = data.next || null;
+                return renderOfficeSearchResults({ records: cnpjaOfficeRecords, next: cnpjaOfficeNext });
+            }
             return renderOfficeDetail(data);
         }
 
@@ -2012,8 +2022,12 @@
                 `;
             }).join('');
 
-            return `<h3 class="cnpja-result__subtitle"><i class="fa-solid fa-list"></i> ${escapeHtml(t('cnpjaResultsTitle'))}</h3>
+            let html = `<h3 class="cnpja-result__subtitle"><i class="fa-solid fa-list"></i> ${escapeHtml(t('cnpjaResultsTitle'))}</h3>
                     <div class="cnpja-search-list">${items}</div>`;
+            if (data.next) {
+                html += `<div class="cnpja-loadmore"><button class="btn btn--secondary btn--sm" data-cnpja-loadmore="empresa"><i class="fa-solid fa-plus"></i> ${escapeHtml(t('cnpjaLoadMore'))}</button></div>`;
+            }
+            return html;
         }
 
         function cnpjaStatusClass(text) {
@@ -2074,11 +2088,19 @@
             return html;
         }
 
+        function renderPersonResult(data, append) {
+            if (!data || typeof data !== 'object') return cnpjaEmptyResult();
+            if (Array.isArray(data.records)) {
+                cnpjaPersonRecords = append ? cnpjaPersonRecords.concat(data.records) : data.records;
+                cnpjaPersonNext = data.next || null;
+                return renderPersonSearchResults({ records: cnpjaPersonRecords, next: cnpjaPersonNext });
+            }
+            return renderPersonDetail(data);
+        }
+
         function renderPersonSearchResults(data) {
             const records = Array.isArray(data.records) ? data.records : [];
             if (!records.length) return cnpjaEmptyResult();
-
-            cnpjaPersonRecords = records;
 
             const items = records.map(person => {
                 const name = person.name || '';
@@ -2101,8 +2123,12 @@
                 `;
             }).join('');
 
-            return `<h3 class="cnpja-result__subtitle"><i class="fa-solid fa-users"></i> ${escapeHtml(t('cnpjaResultsTitle'))}</h3>
+            let html = `<h3 class="cnpja-result__subtitle"><i class="fa-solid fa-users"></i> ${escapeHtml(t('cnpjaResultsTitle'))}</h3>
                     <div class="cnpja-search-list">${items}</div>`;
+            if (data.next) {
+                html += `<div class="cnpja-loadmore"><button class="btn btn--secondary btn--sm" data-cnpja-loadmore="socios"><i class="fa-solid fa-plus"></i> ${escapeHtml(t('cnpjaLoadMore'))}</button></div>`;
+            }
+            return html;
         }
 
         function renderPersonDetail(data) {
@@ -2293,6 +2319,18 @@
                 return;
             }
 
+            const loadMoreBtn = e.target.closest('[data-cnpja-loadmore]');
+            if (loadMoreBtn) {
+                const subtab = loadMoreBtn.dataset.cnpjaLoadmore;
+                const next = subtab === 'empresa' ? cnpjaOfficeNext : cnpjaPersonNext;
+                if (subtab === 'empresa') {
+                    runCnpjaRequest('office-search', { token: next }, 'empresa', true);
+                } else {
+                    runCnpjaRequest('person-search', { token: next }, 'socios', true);
+                }
+                return;
+            }
+
             const officeItem = e.target.closest('[data-cnpja-office-taxid]');
             if (officeItem) {
                 runCnpjaRequest('office', { taxId: officeItem.dataset.cnpjaOfficeTaxid }, 'empresa');
@@ -2309,7 +2347,7 @@
         });
 
         // ----- API request -----
-        async function runCnpjaRequest(action, payload, subtab) {
+        async function runCnpjaRequest(action, payload, subtab, append = false) {
             const errorEl = subtab === 'empresa' ? dom.cnpjaErrorEmpresa : dom.cnpjaErrorSocios;
             const resultEl = subtab === 'empresa' ? dom.cnpjaResultEmpresa : dom.cnpjaResultSocios;
 
@@ -2338,9 +2376,11 @@
                 }
 
                 const data = await response.json();
-                renderCnpjaResult(subtab, data);
-                saveCnpjaHistory(subtab, payload.taxId || payload.query || '', data);
-                renderCnpjaHistory();
+                renderCnpjaResult(subtab, data, append);
+                if (!append) {
+                    saveCnpjaHistory(subtab, payload.taxId || payload.query || '', data);
+                    renderCnpjaHistory();
+                }
             } catch (err) {
                 console.error('CNPJá API error:', err);
                 errorEl.textContent = `${t('cnpjaApiError')} ${err.message || ''}`;
@@ -2351,13 +2391,12 @@
             }
         }
 
-        function renderCnpjaResult(subtab, data) {
+        function renderCnpjaResult(subtab, data, append = false) {
             const resultEl = subtab === 'empresa' ? dom.cnpjaResultEmpresa : dom.cnpjaResultSocios;
             if (subtab === 'empresa') {
-                resultEl.innerHTML = renderOfficeResult(data);
+                resultEl.innerHTML = renderOfficeResult(data, append);
             } else {
-                cnpjaPersonRecords = Array.isArray(data.records) ? data.records : (data && typeof data === 'object' ? [data] : []);
-                resultEl.innerHTML = renderPersonResult(data);
+                resultEl.innerHTML = renderPersonResult(data, append);
             }
         }
 

@@ -1119,6 +1119,12 @@
             color: var(--color-text-muted);
         }
 
+        .cnpja-loadmore {
+            display: flex;
+            justify-content: center;
+            margin-top: 12px;
+        }
+
         .cnpja-hero {
             display: flex;
             align-items: flex-start;
