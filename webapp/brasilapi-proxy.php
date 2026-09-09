@@ -157,9 +157,9 @@ function json_error(int $code, string $error, ?string $detail = null): void {
 /**
  * Validate a 14-position CNPJ (numeric or alphanumeric) including its check digits.
  *
- * Alphanumeric mapping follows the official módulo 11 generalization:
+ * Alphanumeric mapping follows the official RFB rule (ASCII code minus 48):
  *   - '0'..'9' -> 0..9
- *   - 'A'..'Z' -> 10..35
+ *   - 'A'..'Z' -> 17..42
  * Weights are the same as the numeric CNPJ algorithm.
  */
 function cnpj_valido(string $cnpj): bool {
@@ -168,11 +168,8 @@ function cnpj_valido(string $cnpj): bool {
 
     $valor = static function (string $c): int {
         $ord = ord($c);
-        if ($ord >= 48 && $ord <= 57) {
-            return $ord - 48;
-        }
-        if ($ord >= 65 && $ord <= 90) {
-            return $ord - 55;
+        if (($ord >= 48 && $ord <= 57) || ($ord >= 65 && $ord <= 90)) {
+            return $ord - 48; // official RFB rule: ASCII code minus 48 (A=17..Z=42)
         }
         return -1;
     };
