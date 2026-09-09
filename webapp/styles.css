@@ -1065,6 +1065,20 @@
             word-break: break-word;
         }
 
+        .cnpja-info-item--wide {
+            grid-column: 1 / -1;
+        }
+
+        .cnpja-activity-item {
+            padding: 2px 0;
+        }
+
+        .cnpja-activity-item + .cnpja-activity-item {
+            border-top: 1px solid var(--color-border-light);
+            margin-top: 2px;
+            padding-top: 4px;
+        }
+
         .cnpja-members {
             display: flex;
             flex-direction: column;

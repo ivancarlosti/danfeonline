@@ -316,6 +316,10 @@
                 cnpjFieldAddress: 'Endereço',
                 cnpjFieldRole: 'Qualificação',
                 cnpjFieldSince: 'Desde',
+                cnpjFieldSimples: 'Simples Nacional',
+                cnpjFieldSecondaryActivities: 'Atividades Secundárias',
+                cnpjYes: 'Sim',
+                cnpjNo: 'Não',
             },
             en: {
                 headerTitle: 'Fiscal Hub',
@@ -416,6 +420,10 @@
                 cnpjFieldAddress: 'Address',
                 cnpjFieldRole: 'Role',
                 cnpjFieldSince: 'Since',
+                cnpjFieldSimples: 'Simples Nacional',
+                cnpjFieldSecondaryActivities: 'Secondary Activities',
+                cnpjYes: 'Yes',
+                cnpjNo: 'No',
             },
             es: {
                 headerTitle: 'Fiscal Hub',
@@ -516,6 +524,10 @@
                 cnpjFieldAddress: 'Dirección',
                 cnpjFieldRole: 'Calificación',
                 cnpjFieldSince: 'Desde',
+                cnpjFieldSimples: 'Simples Nacional',
+                cnpjFieldSecondaryActivities: 'Actividades Secundarias',
+                cnpjYes: 'Sí',
+                cnpjNo: 'No',
             },
         };
 
@@ -1879,14 +1891,28 @@
             return 'cnpja-badge--neutral';
         }
 
-        function cnpjaInfoItem(label, value, icon) {
-            return `<div class="cnpja-info-item">
+        function cnpjaInfoItem(label, value, icon, opts = {}) {
+            const wideClass = opts.wide ? ' cnpja-info-item--wide' : '';
+            const content = opts.html ? value : escapeHtml(cnpjValue(value));
+            return `<div class="cnpja-info-item${wideClass}">
                 <span class="cnpja-info-item__icon"><i class="fa-solid ${icon}"></i></span>
                 <span class="cnpja-info-item__content">
                     <span class="cnpja-info-item__label">${escapeHtml(label)}</span>
-                    <span class="cnpja-info-item__value">${escapeHtml(cnpjValue(value))}</span>
+                    <span class="cnpja-info-item__value">${content}</span>
                 </span>
             </div>`;
+        }
+
+        function formatCnae(code, desc) {
+            if (code !== null && code !== undefined && code !== '' && desc) return `${code} — ${desc}`;
+            return desc || (code !== null && code !== undefined && code !== '' ? String(code) : '');
+        }
+
+        function cnpjSecondaryActivities(cnaes) {
+            if (!Array.isArray(cnaes) || !cnaes.length) return '';
+            return cnaes
+                .map(c => `<div class="cnpja-activity-item">${escapeHtml(formatCnae(c.codigo, c.descricao))}</div>`)
+                .join('');
         }
 
         function cnpjAddress(data) {
@@ -1929,7 +1955,9 @@
             const taxId = data.cnpj || '';
             const founded = data.data_inicio_atividade || '';
             const status = data.descricao_situacao_cadastral || '';
-            const mainActivity = data.cnae_fiscal_descricao || '';
+            const mainActivity = formatCnae(data.cnae_fiscal, data.cnae_fiscal_descricao);
+            const secondaryActivities = cnpjSecondaryActivities(data.cnaes_secundarios);
+            const simples = data.opcao_pelo_simples === true ? t('cnpjYes') : t('cnpjNo');
             const nature = data.natureza_juridica || '';
             const size = data.porte || '';
             const equity = data.capital_social;
@@ -1947,11 +1975,13 @@
                 </div>
                 <div class="cnpja-info-grid">
                     ${cnpjaInfoItem(t('cnpjFieldFounded'), formatDate(founded), 'fa-calendar')}
-                    ${cnpjaInfoItem(t('cnpjFieldMainActivity'), mainActivity, 'fa-briefcase')}
+                    ${cnpjaInfoItem(t('cnpjFieldSimples'), simples, 'fa-file-invoice-dollar')}
                     ${cnpjaInfoItem(t('cnpjFieldNature'), nature, 'fa-scale-balanced')}
                     ${cnpjaInfoItem(t('cnpjFieldSize'), size, 'fa-chart-simple')}
                     ${cnpjaInfoItem(t('cnpjFieldCapital'), formatCurrency(equity), 'fa-sack-dollar')}
-                    ${cnpjaInfoItem(t('cnpjFieldAddress'), cnpjAddress(data), 'fa-location-dot')}
+                    ${cnpjaInfoItem(t('cnpjFieldMainActivity'), mainActivity, 'fa-briefcase', { wide: true })}
+                    ${secondaryActivities ? cnpjaInfoItem(t('cnpjFieldSecondaryActivities'), secondaryActivities, 'fa-list-check', { wide: true, html: true }) : ''}
+                    ${cnpjaInfoItem(t('cnpjFieldAddress'), cnpjAddress(data), 'fa-location-dot', { wide: true })}
                 </div>`;
 
             const qsa = Array.isArray(data.qsa) ? data.qsa : [];
