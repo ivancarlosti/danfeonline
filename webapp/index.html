@@ -246,13 +246,13 @@ HEADER
                             type="text"
                             id="input-cnpj"
                             class="cnpja-searchbar__input"
-                            placeholder="00.000.000/0000-00"
-                            inputmode="numeric"
+                            placeholder="AA.AAA.AAA/AAAA-00"
                             maxlength="18"
                             data-i18n="cnpjPlaceholder"
                             data-i18n-attr="placeholder"
                             data-i18n-aria="cnpjLabel"
                             autocomplete="off"
+                            autocapitalize="characters"
                         >
                     </div>
                     <button class="btn btn--primary cnpja-searchbar__btn" id="btn-consultar-cnpj" disabled>
@@ -261,7 +261,7 @@ HEADER
                     </button>
                 </div>
                 <div class="input-wrapper__hint" data-i18n="cnpjHint" style="margin-top:8px;">
-                    Informe um CNPJ com 14 dígitos para consultar o cadastro completo e os sócios
+                    Informe um CNPJ com 14 posições (numérico ou alfanumérico) para consultar o cadastro completo e os sócios
                 </div>
                 <div class="cnpja-error" id="cnpj-error" role="alert"></div>
                 <div class="cnpja-result" id="cnpj-result"></div>

@@ -297,10 +297,11 @@
                 tabCnpja: 'Consulta CNPJ',
                 cnpjTitle: 'Consulta CNPJ',
                 cnpjLabel: 'CNPJ',
-                cnpjPlaceholder: '00.000.000/0000-00',
-                cnpjHint: 'Informe um CNPJ com 14 dígitos para consultar o cadastro completo e os sócios',
+                cnpjPlaceholder: 'AA.AAA.AAA/AAAA-00',
+                cnpjHint: 'Informe um CNPJ com 14 posições (numérico ou alfanumérico) para consultar o cadastro completo e os sócios',
                 cnpjBtnConsultar: 'Consultar',
-                cnpjInvalidCnpj: 'O CNPJ deve ter exatamente 14 dígitos.',
+                cnpjInvalidCnpj: 'O CNPJ deve ter exatamente 14 posições (12 alfanuméricas + 2 dígitos).',
+                cnpjInvalidDv: 'CNPJ inválido: os dígitos verificadores não conferem.',
                 cnpjLoading: 'Consultando BrasilAPI...',
                 cnpjApiError: 'Não foi possível consultar a BrasilAPI.',
                 cnpjNoResults: 'Nenhum dado encontrado para este CNPJ.',
@@ -401,10 +402,11 @@
                 tabCnpja: 'CNPJ Lookup',
                 cnpjTitle: 'CNPJ Lookup',
                 cnpjLabel: 'CNPJ',
-                cnpjPlaceholder: '00.000.000/0000-00',
-                cnpjHint: 'Enter a 14-digit CNPJ to view the full record and its partners',
+                cnpjPlaceholder: 'AA.AAA.AAA/AAAA-00',
+                cnpjHint: 'Enter a 14-position CNPJ (numeric or alphanumeric) to view the full record and its partners',
                 cnpjBtnConsultar: 'Search',
-                cnpjInvalidCnpj: 'CNPJ must have exactly 14 digits.',
+                cnpjInvalidCnpj: 'CNPJ must have exactly 14 positions (12 alphanumeric + 2 digits).',
+                cnpjInvalidDv: 'Invalid CNPJ: check digits do not match.',
                 cnpjLoading: 'Querying BrasilAPI...',
                 cnpjApiError: 'Could not query the BrasilAPI.',
                 cnpjNoResults: 'No data found for this CNPJ.',
@@ -505,10 +507,11 @@
                 tabCnpja: 'Consulta CNPJ',
                 cnpjTitle: 'Consulta CNPJ',
                 cnpjLabel: 'CNPJ',
-                cnpjPlaceholder: '00.000.000/0000-00',
-                cnpjHint: 'Informe un CNPJ de 14 dígitos para ver el registro completo y sus socios',
+                cnpjPlaceholder: 'AA.AAA.AAA/AAAA-00',
+                cnpjHint: 'Informe un CNPJ de 14 posiciones (numérico o alfanumérico) para ver el registro completo y sus socios',
                 cnpjBtnConsultar: 'Consultar',
-                cnpjInvalidCnpj: 'El CNPJ debe tener exactamente 14 dígitos.',
+                cnpjInvalidCnpj: 'El CNPJ debe tener exactamente 14 posiciones (12 alfanuméricas + 2 dígitos).',
+                cnpjInvalidDv: 'CNPJ inválido: los dígitos verificadores no coinciden.',
                 cnpjLoading: 'Consultando BrasilAPI...',
                 cnpjApiError: 'No se pudo consultar la BrasilAPI.',
                 cnpjNoResults: 'No se encontraron datos para este CNPJ.',
@@ -615,11 +618,29 @@
             return groups.join(' ');
         }
 
-        /** Format CNPJ: XX.XXX.XXX/XXXX-XX */
+        /** Normalize a CNPJ: uppercase, keep only A-Z0-9, truncate to 14 positions */
+        function normalizeCnpj(value) {
+            return String(value || '')
+                .toUpperCase()
+                .replace(/[^A-Z0-9]/g, '')
+                .substring(0, 14);
+        }
+
+        /** Format a CNPJ (numeric or alphanumeric): AA.AAA.AAA/AAAA-DV */
         function formatCNPJ(cnpj) {
-            const d = onlyDigits(cnpj);
+            const d = normalizeCnpj(cnpj);
             if (d.length !== 14) return cnpj;
-            return d.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5');
+            return formatCnpjInput(d);
+        }
+
+        /** Apply the CNPJ input mask AA.AAA.AAA/AAAA-DV to normalized characters */
+        function formatCnpjInput(cleaned) {
+            let out = cleaned;
+            if (out.length > 12) out = `${out.slice(0, 12)}-${out.slice(12)}`;
+            if (out.length > 8) out = `${out.slice(0, 8)}/${out.slice(8)}`;
+            if (out.length > 5) out = `${out.slice(0, 5)}.${out.slice(5)}`;
+            if (out.length > 2) out = `${out.slice(0, 2)}.${out.slice(2)}`;
+            return out;
         }
 
         /** Format CPF: XXX.XXX.XXX-XX */
@@ -1845,18 +1866,75 @@
         const CNPJ_HISTORY_KEY = 'danfe-cnpj-history';
         const CNPJ_HISTORY_MAX = 10;
 
-        // ----- Input handling (14-digit CNPJ only) -----
+        // ----- CNPJ validation (numeric or alphanumeric) -----
+        /** Map an alphanumeric CNPJ char to its numeric value: 0-9 -> 0-9, A-Z -> 10-35. */
+        function cnpjCharValue(ch) {
+            const code = ch.charCodeAt(0);
+            if (code >= 48 && code <= 57) return code - 48;
+            if (code >= 65 && code <= 90) return code - 55;
+            return -1;
+        }
+
+        /** Validate a 14-position normalized CNPJ including its check digits (módulo 11). */
+        function isValidCnpj(cnpj) {
+            if (typeof cnpj !== 'string' || cnpj.length !== 14) return false;
+            if (!/^[A-Z0-9]{12}\d{2}$/.test(cnpj)) return false;
+
+            const weights1 = [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
+            const weights2 = [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
+
+            function calcDv(weights, extra) {
+                let sum = 0;
+                for (let i = 0; i < 12; i++) {
+                    const v = cnpjCharValue(cnpj[i]);
+                    if (v < 0) return -1;
+                    sum += v * weights[i];
+                }
+                if (extra !== undefined) sum += extra * weights[12];
+                const dv = 11 - (sum % 11);
+                return dv >= 10 ? 0 : dv;
+            }
+
+            const dv1 = calcDv(weights1);
+            const dv2 = calcDv(weights2, dv1);
+            return dv1 === Number(cnpj[12]) && dv2 === Number(cnpj[13]);
+        }
+
+        // ----- Input handling (numeric or alphanumeric CNPJ) -----
         function updateCnpjInput() {
-            const value = dom.inputCnpj.value.trim();
-            const digits = onlyDigits(value);
-            dom.btnConsultarCnpj.disabled = (digits.length !== 14);
+            const raw = dom.inputCnpj.value;
+            const cursorPos = dom.inputCnpj.selectionStart;
+            const rawBeforeCursor = raw.substring(0, cursorPos);
+            const charsBeforeCursor = (rawBeforeCursor.match(/[A-Z0-9]/g) || []).length;
+
+            const cleaned = normalizeCnpj(raw);
+            const masked = formatCnpjInput(cleaned);
+
+            if (masked !== raw) {
+                dom.inputCnpj.value = masked;
+
+                let newPos = 0;
+                let count = 0;
+                for (let i = 0; i < masked.length; i++) {
+                    if (/[A-Z0-9]/.test(masked[i])) count++;
+                    if (count > charsBeforeCursor) break;
+                    newPos = i + 1;
+                }
+                if (cleaned.length === 14 && charsBeforeCursor >= 14) {
+                    newPos = masked.length;
+                }
+                dom.inputCnpj.setSelectionRange(newPos, newPos);
+            }
+
+            dom.btnConsultarCnpj.disabled = (cleaned.length !== 14);
         }
 
         dom.inputCnpj.addEventListener('input', updateCnpjInput);
         dom.inputCnpj.addEventListener('paste', (e) => {
             e.preventDefault();
             const pasted = (e.clipboardData || window.clipboardData).getData('text');
-            dom.inputCnpj.value = onlyDigits(pasted).substring(0, 14);
+            const cleaned = normalizeCnpj(pasted);
+            dom.inputCnpj.value = formatCnpjInput(cleaned);
             updateCnpjInput();
         });
         dom.inputCnpj.addEventListener('keydown', (e) => {
@@ -1865,8 +1943,8 @@
             if (allowed.includes(e.keyCode)) return;
             // Allow Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X
             if ((e.ctrlKey || e.metaKey) && [65, 67, 86, 88].includes(e.keyCode)) return;
-            // Block non-digit keys
-            if (!/^\d$/.test(e.key)) {
+            // Allow digits and letters (case-insensitive)
+            if (!/^[A-Za-z0-9]$/.test(e.key)) {
                 e.preventDefault();
             }
         });
@@ -1878,8 +1956,9 @@
         }
 
         function formatTaxIdAny(value) {
+            const cleaned = normalizeCnpj(String(value || ''));
+            if (cleaned.length === 14) return formatCNPJ(cleaned);
             const digits = onlyDigits(String(value || ''));
-            if (digits.length === 14) return formatCNPJ(digits);
             if (digits.length === 11) return formatCPF(digits);
             return cnpjValue(value);
         }
@@ -2113,12 +2192,12 @@
         // ----- Query dispatcher -----
         function consultarCnpj() {
             const value = dom.inputCnpj.value.trim();
-            const digits = onlyDigits(value);
+            const cleaned = normalizeCnpj(value);
 
             dom.cnpjError.textContent = '';
             dom.cnpjError.classList.remove('cnpj-error--visible');
 
-            if (digits.length !== 14) {
+            if (cleaned.length !== 14) {
                 const msg = t('cnpjInvalidCnpj');
                 dom.cnpjError.textContent = msg;
                 dom.cnpjError.classList.add('cnpj-error--visible');
@@ -2126,7 +2205,15 @@
                 return;
             }
 
-            runCnpjRequest({ action: 'cnpj', taxId: digits });
+            if (!isValidCnpj(cleaned)) {
+                const msg = t('cnpjInvalidDv');
+                dom.cnpjError.textContent = msg;
+                dom.cnpjError.classList.add('cnpj-error--visible');
+                showToast(msg, 'warning');
+                return;
+            }
+
+            runCnpjRequest({ action: 'cnpj', taxId: cleaned });
         }
 
         dom.btnConsultarCnpj.addEventListener('click', consultarCnpj);

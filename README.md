@@ -32,7 +32,8 @@ Fiscal Hub is a modern, progressive web application for generating and visualizi
 - **Smart Retry Logic** — If the NFe is not yet in the account, the proxy automatically adds it via the API and polls until the SEFAZ query completes (up to 30 seconds).
 
 ### 🏢 CNPJ Lookup (BrasilAPI)
-- **Full CNPJ Lookup** — Enter a 14-digit CNPJ to open the complete company record: legal name, trade name, status, founding date, main activity, legal nature, size, capital, and address.
+- **Full CNPJ Lookup** — Enter a 14-position CNPJ (numeric or alphanumeric) to open the complete company record: legal name, trade name, status, founding date, main activity, legal nature, size, capital, and address.
+- **Alphanumeric Support** — Accepts the new alphanumeric CNPJ format (`AA.AAA.AAA/AAAA-DV`) with uppercase normalization, live input masking, and full check-digit validation (módulo 11).
 - **Partners (QSA)** — The company's partners and officers are displayed directly from the CNPJ response (`qsa`), including role and entry date.
 - **Browser History** — Recent lookups are persisted in `localStorage` and can be re-run with one click — no server-side database required.
 
@@ -106,7 +107,7 @@ Three auth modes configurable via environment variable:
 
 3. **Barcode Path:** Camera opens → Quagga2 scans Code 128/39 barcode → extracts 44 digits → auto-fills input or copies to clipboard → user proceeds with online lookup or manual SEFAZ consultation.
 
-4. **CNPJ Lookup Path (Online):** User selects the "Consulta CNPJ" tab → enters a 14-digit CNPJ → `app.js` POSTs an action (`cnpj`) to `brasilapi-proxy.php` → `auth.php` validates credentials → `brasilapi-proxy.php` calls the BrasilAPI (`GET /api/cnpj/v1/{cnpj}`) → returns the JSON response for rendering (including the `qsa` partners list). Successful lookups are stored in `localStorage` history.
+4. **CNPJ Lookup Path (Online):** User selects the "Consulta CNPJ" tab → enters a 14-position CNPJ (numeric or alphanumeric) → `app.js` validates the check digits and POSTs an action (`cnpj`) to `brasilapi-proxy.php` → `auth.php` validates credentials → `brasilapi-proxy.php` re-validates and calls the BrasilAPI (`GET /api/cnpj/v1/{cnpj}`) → returns the JSON response for rendering (including the `qsa` partners list). Successful lookups are stored in `localStorage` history.
 
 ### Project Structure
 

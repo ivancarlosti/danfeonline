@@ -66,9 +66,12 @@ if ($action !== 'cnpj') {
     json_error(400, 'Invalid action. Send "cnpj".');
 }
 
-$taxId = preg_replace('/\D/', '', (string)($json['taxId'] ?? ''));
+$taxId = preg_replace('/[^A-Z0-9]/', '', strtoupper((string)($json['taxId'] ?? '')));
 if (strlen($taxId) !== 14) {
-    json_error(400, 'Invalid CNPJ: must have exactly 14 digits');
+    json_error(400, 'Invalid CNPJ: must have exactly 14 positions');
+}
+if (!preg_match('/^[A-Z0-9]{12}\d{2}$/', $taxId) || !cnpj_valido($taxId)) {
+    json_error(400, 'Invalid CNPJ: check digits do not match');
 }
 
 $url = $apiBase . '/' . rawurlencode($taxId);
@@ -149,4 +152,49 @@ function json_error(int $code, string $error, ?string $detail = null): void {
     }
     echo json_encode($payload);
     exit;
+}
+
+/**
+ * Validate a 14-position CNPJ (numeric or alphanumeric) including its check digits.
+ *
+ * Alphanumeric mapping follows the official módulo 11 generalization:
+ *   - '0'..'9' -> 0..9
+ *   - 'A'..'Z' -> 10..35
+ * Weights are the same as the numeric CNPJ algorithm.
+ */
+function cnpj_valido(string $cnpj): bool {
+    $pesos1 = [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
+    $pesos2 = [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
+
+    $valor = static function (string $c): int {
+        $ord = ord($c);
+        if ($ord >= 48 && $ord <= 57) {
+            return $ord - 48;
+        }
+        if ($ord >= 65 && $ord <= 90) {
+            return $ord - 55;
+        }
+        return -1;
+    };
+
+    $calc = static function (array $pesos, ?int $extra = null) use ($cnpj, $valor): int {
+        $soma = 0;
+        for ($i = 0; $i < 12; $i++) {
+            $v = $valor($cnpj[$i]);
+            if ($v < 0) {
+                return -1;
+            }
+            $soma += $v * $pesos[$i];
+        }
+        if ($extra !== null) {
+            $soma += $extra * $pesos[12];
+        }
+        $dv = 11 - ($soma % 11);
+        return $dv >= 10 ? 0 : $dv;
+    };
+
+    $dv1 = $calc($pesos1);
+    $dv2 = $calc($pesos2, $dv1);
+
+    return $dv1 === (int)$cnpj[12] && $dv2 === (int)$cnpj[13];
 }
