@@ -881,50 +881,8 @@
         .fallback-box__link:hover { text-decoration: underline; }
 
         /* ============================================================
-           CNPJÁ LOOKUP (Consulta CNPJ)
+           CNPJ LOOKUP (Consulta CNPJ — BrasilAPI)
            ============================================================ */
-        .cnpja-subtabs {
-            display: flex;
-            gap: 4px;
-            background: var(--color-surface-alt);
-            border: 1px solid var(--color-border-light);
-            border-radius: var(--radius-sm);
-            padding: 4px;
-            margin-top: 4px;
-        }
-
-        .cnpja-subtab {
-            flex: 1;
-            padding: 10px 16px;
-            border: none;
-            background: transparent;
-            border-radius: var(--radius-xs);
-            font-family: var(--font-sans);
-            font-size: 0.9rem;
-            font-weight: 500;
-            color: var(--color-text-secondary);
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            transition: all var(--transition-fast);
-        }
-
-        .cnpja-subtab:hover { background: var(--color-surface); color: var(--color-text); }
-
-        .cnpja-subtab--active {
-            background: var(--color-primary);
-            color: #fff;
-            box-shadow: var(--shadow-xs);
-        }
-
-        .cnpja-subtab--active:hover { background: var(--color-primary-hover); color: #fff; }
-
-        .cnpja-subpanel { display: none; }
-        .cnpja-subpanel--active { display: block; animation: fadeSlideIn 0.25s ease; }
-
-        .input--cnpja { letter-spacing: 1px; font-size: 1rem; }
 
         .cnpja-searchbar {
             display: flex;
@@ -989,47 +947,6 @@
 
         .cnpja-result { margin-top: 20px; }
 
-        .cnpja-result__grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 12px;
-        }
-
-        .cnpja-result__item {
-            background: var(--color-surface-alt);
-            border: 1px solid var(--color-border-light);
-            border-radius: var(--radius-sm);
-            padding: 12px 14px;
-        }
-
-        .cnpja-result__label {
-            display: block;
-            font-size: 0.72rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.4px;
-            color: var(--color-text-muted);
-            margin-bottom: 4px;
-        }
-
-        .cnpja-result__value {
-            font-size: 0.95rem;
-            color: var(--color-text);
-            word-break: break-word;
-        }
-
-        .cnpja-result__empty {
-            padding: 16px;
-            background: var(--color-surface-alt);
-            border: 1px dashed var(--color-border);
-            border-radius: var(--radius-sm);
-            color: var(--color-text-secondary);
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 0.9rem;
-        }
-
         .cnpja-result__subtitle {
             font-size: 0.95rem;
             font-weight: 600;
@@ -1042,89 +959,6 @@
 
         .cnpja-result__subtitle i { color: var(--color-primary); }
 
-        .cnpja-search-list {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .cnpja-search-item {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            width: 100%;
-            padding: 12px 16px;
-            border: 1px solid var(--color-border-light);
-            border-radius: var(--radius-sm);
-            background: var(--color-surface-alt);
-            cursor: pointer;
-            font-family: var(--font-sans);
-            text-align: left;
-            transition: all var(--transition-fast);
-        }
-
-        .cnpja-search-item:hover {
-            border-color: var(--color-primary);
-            background: var(--color-primary-light);
-            transform: translateY(-1px);
-        }
-
-        .cnpja-search-item__avatar {
-            width: 42px;
-            height: 42px;
-            flex-shrink: 0;
-            border-radius: var(--radius-full);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1rem;
-            font-weight: 700;
-            color: var(--color-primary);
-            background: var(--color-primary-light);
-        }
-
-        .cnpja-search-item__avatar--person {
-            color: #fff;
-            background: var(--color-primary);
-        }
-
-        .cnpja-search-item__content {
-            flex: 1;
-            min-width: 0;
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-        }
-
-        .cnpja-search-item__title {
-            font-size: 0.95rem;
-            font-weight: 600;
-            color: var(--color-text);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .cnpja-search-item__meta {
-            font-size: 0.8rem;
-            color: var(--color-text-secondary);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .cnpja-search-item__chevron {
-            flex-shrink: 0;
-            font-size: 0.85rem;
-            color: var(--color-text-muted);
-        }
-
-        .cnpja-loadmore {
-            display: flex;
-            justify-content: center;
-            margin-top: 12px;
-        }
-
         .cnpja-hero {
             display: flex;
             align-items: flex-start;
@@ -1133,24 +967,6 @@
             background: linear-gradient(135deg, var(--color-primary-light), var(--color-surface-alt));
             border: 1px solid var(--color-border-light);
             border-radius: var(--radius-md);
-        }
-
-        .cnpja-hero--person {
-            align-items: center;
-        }
-
-        .cnpja-hero__avatar {
-            width: 56px;
-            height: 56px;
-            flex-shrink: 0;
-            border-radius: var(--radius-full);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.3rem;
-            font-weight: 700;
-            color: #fff;
-            background: var(--color-primary);
         }
 
         .cnpja-hero__main {
@@ -1309,59 +1125,6 @@
 
         .cnpja-member__meta i { color: var(--color-primary); }
 
-        .cnpja-company-list {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .cnpja-company-item {
-            background: var(--color-surface-alt);
-            border: 1px solid var(--color-border-light);
-            border-radius: var(--radius-sm);
-            padding: 14px 16px;
-        }
-
-        .cnpja-company-item__header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-            flex-wrap: wrap;
-        }
-
-        .cnpja-company-item__header strong {
-            font-size: 0.95rem;
-            color: var(--color-text);
-        }
-
-        .cnpja-company-item__taxid {
-            font-family: var(--font-mono);
-            font-size: 0.8rem;
-            color: var(--color-text-secondary);
-            background: var(--color-surface);
-            border: 1px solid var(--color-border-light);
-            padding: 2px 8px;
-            border-radius: var(--radius-xs);
-        }
-
-        .cnpja-company-item__body {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px 18px;
-            margin-top: 10px;
-            font-size: 0.85rem;
-            color: var(--color-text-secondary);
-        }
-
-        .cnpja-company-item__body span {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .cnpja-company-item__body i { color: var(--color-primary); }
-
         .cnpja-history { margin-top: 24px; }
 
         .cnpja-history__header {
@@ -1439,12 +1202,10 @@
         }
 
         @media (max-width: 600px) {
-            .cnpja-company-item__body { flex-direction: column; gap: 6px; }
             .cnpja-history__item { width: 100%; justify-content: space-between; }
             .cnpja-searchbar__field { min-width: 0; }
             .cnpja-searchbar__btn { width: 100%; }
             .cnpja-hero { flex-direction: column; }
-            .cnpja-hero--person { align-items: flex-start; }
             .cnpja-member { align-items: flex-start; }
         }
 

@@ -2,7 +2,7 @@
 
 📄 **Fiscal documents, DANFE generation & business lookups — in the browser**
 
-Fiscal Hub is a modern, progressive web application for generating and visualizing Brazilian electronic invoice documents (DANFE — Documento Auxiliar da Nota Fiscal Eletrônica). It also provides CNPJ/CPF and partner lookups, offline XML-to-PDF generation, online API lookup by access key, camera barcode scanning, and a comprehensive municipal NF-e consultation directory — all packaged in a lightweight Docker container.
+Fiscal Hub is a modern, progressive web application for generating and visualizing Brazilian electronic invoice documents (DANFE — Documento Auxiliar da Nota Fiscal Eletrônica). It also provides CNPJ lookups, offline XML-to-PDF generation, online API lookup by access key, camera barcode scanning, and a comprehensive municipal NF-e consultation directory — all packaged in a lightweight Docker container.
 
 <!-- buttons -->
 [![Stars](https://img.shields.io/github/stars/ivancarlosti/danfeonline?label=⭐%20Stars&color=gold&style=flat)](https://github.com/ivancarlosti/danfeonline/stargazers)
@@ -31,9 +31,9 @@ Fiscal Hub is a modern, progressive web application for generating and visualizi
 - **Meu Danfe API Integration** — Server-side PHP proxy forwards access keys to the Meu Danfe API v2, retrieves the official DANFE PDF, and returns it to the browser.
 - **Smart Retry Logic** — If the NFe is not yet in the account, the proxy automatically adds it via the API and polls until the SEFAZ query completes (up to 30 seconds).
 
-### 🏢 CNPJ Lookup (CNPJá API)
-- **Company (Empresa)** — Enter a CNPJ to open the full company record (including the partners/officers list from `company.members`), or enter a legal/trade name to search and pick the matching establishment.
-- **Partners (Sócios)** — Enter a CPF or name to search people; select a result to view their memberships (companies where they participate), with role, entry date, and capital.
+### 🏢 CNPJ Lookup (BrasilAPI)
+- **Full CNPJ Lookup** — Enter a 14-digit CNPJ to open the complete company record: legal name, trade name, status, founding date, main activity, legal nature, size, capital, and address.
+- **Partners (QSA)** — The company's partners and officers are displayed directly from the CNPJ response (`qsa`), including role and entry date.
 - **Browser History** — Recent lookups are persisted in `localStorage` and can be re-run with one click — no server-side database required.
 
 ### 📸 Camera Barcode Scanner
@@ -106,7 +106,7 @@ Three auth modes configurable via environment variable:
 
 3. **Barcode Path:** Camera opens → Quagga2 scans Code 128/39 barcode → extracts 44 digits → auto-fills input or copies to clipboard → user proceeds with online lookup or manual SEFAZ consultation.
 
-4. **CNPJ Lookup Path (Online):** User selects the "Consulta CNPJ" tab and one of its sub-tabs (Empresa or Sócios) → enters a CNPJ/CPF or a name → `app.js` POSTs an action (`office`, `office-search`, or `person-search`) to `cnpja-proxy.php` → `auth.php` validates credentials → `cnpja-proxy.php` calls the CNPJá API (`GET /office/{cnpj}`, `GET /office?names.in=...`, or `GET /person?taxId.in=...` / `name.in=...`) with the `Authorization` header → returns the JSON response for rendering. Successful lookups are stored in `localStorage` history.
+4. **CNPJ Lookup Path (Online):** User selects the "Consulta CNPJ" tab → enters a 14-digit CNPJ → `app.js` POSTs an action (`cnpj`) to `brasilapi-proxy.php` → `auth.php` validates credentials → `brasilapi-proxy.php` calls the BrasilAPI (`GET /api/cnpj/v1/{cnpj}`) → returns the JSON response for rendering (including the `qsa` partners list). Successful lookups are stored in `localStorage` history.
 
 ### Project Structure
 
@@ -119,7 +119,7 @@ fiscalhub/
 │   ├── router.php                # PHP router: enforces auth on every request
 │   ├── auth.php                  # Authentication module (session/OIDC)
 │   ├── proxy.php                 # Server-side CORS proxy for Meu Danfe API
-│   ├── cnpja-proxy.php           # Server-side CORS proxy for CNPJá API
+│   ├── brasilapi-proxy.php       # Server-side CORS proxy for BrasilAPI
 │   ├── login.html                # Login form page (account mode)
 │   ├── login.php                 # Login handler (validates credentials)
 │   └── logout.php                # Logout handler (destroys session)
@@ -170,10 +170,9 @@ MEUDANFE_API_BASE=https://api.meudanfe.com.br/v2
 MEUDANFE_API_KEY=your-api-key-here
 MEUDANFE_API_TIMEOUT=60
 
-# CNPJá API (required for CNPJ/CPF lookups)
-CNPJA_API_BASE=https://api.cnpja.com
-CNPJA_API_KEY=your-cnpja-api-key-here
-CNPJA_API_TIMEOUT=30
+# BrasilAPI (free CNPJ lookups, no API key required)
+BRASILAPI_API_BASE=https://brasilapi.com.br/api/cnpj/v1
+BRASILAPI_API_TIMEOUT=10
 
 # Authentication
 AUTH_METHOD=account
@@ -212,13 +211,14 @@ The default tab is "Upload XML" — drop an NFe XML file to instantly generate a
 | `MEUDANFE_API_KEY` | No* | — | Your Meu Danfe API key (*required for online lookups) |
 | `MEUDANFE_API_TIMEOUT` | No | `60` | Seconds before timing out SEFAZ queries |
 
-### CNPJá API
+### BrasilAPI
 
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
-| `CNPJA_API_BASE` | No | `https://api.cnpja.com` | CNPJá API base URL |
-| `CNPJA_API_KEY` | No* | — | Your CNPJá API key (*required for CNPJ lookups) |
-| `CNPJA_API_TIMEOUT` | No | `30` | Seconds before timing out CNPJá queries |
+| `BRASILAPI_API_BASE` | No | `https://brasilapi.com.br/api/cnpj/v1` | BrasilAPI CNPJ endpoint base URL |
+| `BRASILAPI_API_TIMEOUT` | No | `10` | Seconds before timing out BrasilAPI queries |
+
+> BrasilAPI is free and requires no API key.
 
 ### Authentication
 
@@ -321,9 +321,9 @@ server {
 - Ensure `MEUDANFE_API_KEY` is set in `docker/.env` and is a valid Meu Danfe API key.
 - Restart the container after changing `.env`: `docker compose restart`
 
-**CNPJ lookup fails with "Server configuration error":**
-- Ensure `CNPJA_API_KEY` is set in `docker/.env` and is a valid CNPJá API key.
-- Restart the container after changing `.env`: `docker compose restart`
+**CNPJ lookup fails:**
+- BrasilAPI requires no API key. Check your outbound internet access and DNS resolution from the container.
+- If BrasilAPI is rate limiting or unavailable, retry later. The CNPJ lookup is best-effort and does not block the offline XML-to-PDF feature.
 
 **Online lookup returns 402 (no credits):**
 - Your Meu Danfe account has run out of credits. Each SEFAZ query costs R$0.03. Add credits at the Meu Danfe customer area.
