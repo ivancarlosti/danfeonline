@@ -305,7 +305,6 @@
                 cnpjLoading: 'Consultando BrasilAPI...',
                 cnpjApiError: 'Não foi possível consultar a BrasilAPI.',
                 cnpjNoResults: 'Nenhum dado encontrado para este CNPJ.',
-                cnpjAlphanumericNotSupported: 'A BrasilAPI ainda não suporta consultas de CNPJ alfanumérico. O CNPJ foi validado localmente, mas a API externa recusou a consulta.',
                 cnpjHistoryTitle: 'Consultas recentes',
                 cnpjHistoryClear: 'Limpar',
                 cnpjHistoryEmpty: 'Nenhuma consulta recente.',
@@ -411,7 +410,6 @@
                 cnpjLoading: 'Querying BrasilAPI...',
                 cnpjApiError: 'Could not query the BrasilAPI.',
                 cnpjNoResults: 'No data found for this CNPJ.',
-                cnpjAlphanumericNotSupported: 'BrasilAPI does not support alphanumeric CNPJ lookups yet. The CNPJ was validated locally, but the external API rejected the query.',
                 cnpjHistoryTitle: 'Recent lookups',
                 cnpjHistoryClear: 'Clear',
                 cnpjHistoryEmpty: 'No recent lookups.',
@@ -517,7 +515,6 @@
                 cnpjLoading: 'Consultando BrasilAPI...',
                 cnpjApiError: 'No se pudo consultar la BrasilAPI.',
                 cnpjNoResults: 'No se encontraron datos para este CNPJ.',
-                cnpjAlphanumericNotSupported: 'BrasilAPI aún no admite consultas de CNPJ alfanumérico. El CNPJ fue validado localmente, pero la API externa rechazó la consulta.',
                 cnpjHistoryTitle: 'Consultas recientes',
                 cnpjHistoryClear: 'Limpiar',
                 cnpjHistoryEmpty: 'No hay consultas recientes.',
@@ -2159,7 +2156,6 @@
 
         // ----- API request -----
         async function runCnpjRequest(payload) {
-            const isAlphanumeric = /[A-Z]/.test(String(payload.taxId || ''));
             dom.cnpjError.textContent = '';
             dom.cnpjError.classList.remove('cnpj-error--visible');
             showLoading(t('cnpjLoading'));
@@ -2186,10 +2182,9 @@
                 renderCnpjHistory();
             } catch (err) {
                 console.error('BrasilAPI error:', err);
-                const detail = (err && err.message) ? ` ${err.message}` : '';
-                const message = isAlphanumeric
-                    ? `${t('cnpjAlphanumericNotSupported')}${detail}`
-                    : `${t('cnpjApiError')}${detail}`;
+                const detail = (err && err.message) ? err.message : '';
+                const isNetworkError = err && err.name === 'TypeError';
+                const message = (isNetworkError || !detail) ? t('cnpjApiError') : detail;
                 dom.cnpjError.textContent = message;
                 dom.cnpjError.classList.add('cnpj-error--visible');
                 showToast(message, 'error');
