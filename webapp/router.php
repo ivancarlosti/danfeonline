@@ -5,9 +5,9 @@
  * Enforces authentication on EVERY incoming request before serving
  * any file — static (HTML, CSS, JS) or dynamic (PHP).
  *
- * Whitelisted paths (/login.html, /login.php, /logout.php,
- * /auth-config.php and /styles.css) bypass auth to allow the login form
- * to render.
+ * Whitelisted paths (/login.html, /login.php, /logout.php, /auth-config.php,
+ * /styles.css and the two Keycloak endpoints) bypass auth to allow the login
+ * form to render and the provider redirect to come back.
  *
  * Usage:
  *   php -S 0.0.0.0:8080 router.php          (development)
@@ -35,6 +35,8 @@ $publicPaths = [
     '/logout.php',
     '/auth-config.php',
     '/styles.css',
+    '/keycloak-login.php',
+    '/keycloak-callback.php',
 ];
 
 if (!in_array($normalized, $publicPaths, true)) {

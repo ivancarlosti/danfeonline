@@ -8,7 +8,7 @@
  *   - keycloak:  OIDC Bearer token validation via Keycloak
  *
  * Sessions are bound to the auth method that created them
- * ($_SESSION['danfe_auth_method']), so switching AUTH_METHOD (e.g. account →
+ * ($_SESSION['fiscalhub_auth_method']), so switching AUTH_METHOD (e.g. account →
  * keycloak) revokes every session minted by the previous method.
  *
  * Called by router.php on every request and by proxy.php as defense-in-depth.
@@ -20,7 +20,11 @@ $authMethod = strtolower(getenv('AUTH_METHOD') ?: 'none');
 // ── Secure session configuration ───────────────────────────
 if ($authMethod !== 'none') {
     ini_set('session.cookie_httponly', '1');
-    ini_set('session.cookie_samesite', 'Strict');
+    // keycloak mode returns through a cross-site navigation from the provider
+    // (/keycloak-callback.php): same-site=Strict would drop the session cookie
+    // there, so the state stored by /keycloak-login.php could never be checked.
+    // Lax still blocks cross-site POST, which is the CSRF that matters here.
+    ini_set('session.cookie_samesite', $authMethod === 'keycloak' ? 'Lax' : 'Strict');
     ini_set('session.use_strict_mode', '1');
     // Mark secure if behind HTTPS reverse proxy
     if (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') {
@@ -49,8 +53,8 @@ function auth_session_start(): void {
  */
 function auth_session_valid(): bool {
     global $authMethod;
-    return !empty($_SESSION['danfe_authenticated'])
-        && ($_SESSION['danfe_auth_method'] ?? '') === $authMethod;
+    return !empty($_SESSION['fiscalhub_authenticated'])
+        && ($_SESSION['fiscalhub_auth_method'] ?? '') === $authMethod;
 }
 
 /**
@@ -60,9 +64,9 @@ function auth_set_authenticated(): void {
     global $authMethod;
     auth_session_start();
     session_regenerate_id(true);
-    $_SESSION['danfe_authenticated'] = true;
-    $_SESSION['danfe_auth_method']   = $authMethod;
-    $_SESSION['danfe_login_time']    = time();
+    $_SESSION['fiscalhub_authenticated'] = true;
+    $_SESSION['fiscalhub_auth_method']   = $authMethod;
+    $_SESSION['fiscalhub_login_time']    = time();
 }
 
 /**
@@ -89,7 +93,7 @@ function auth_check(): bool {
         if (auth_session_valid()) {
             return true;
         }
-        if (!empty($_SESSION['danfe_authenticated'])) {
+        if (!empty($_SESSION['fiscalhub_authenticated'])) {
             // Session created while another AUTH_METHOD was active — revoke it.
             auth_discard_stale_session();
         }
@@ -172,6 +176,17 @@ function auth_login_path(string $destination): string {
     }
 
     return '/login.html?redirect=' . urlencode($destination);
+}
+
+/**
+ * Sanitize a redirect target: only local paths are accepted, so a crafted
+ * ?redirect= value can never bounce the browser to another host.
+ */
+function auth_safe_redirect(string $target): string {
+    if (!str_starts_with($target, '/') || str_contains($target, '//')) {
+        return '/';
+    }
+    return parse_url($target, PHP_URL_PATH) ?: '/';
 }
 
 // ── reCAPTCHA (account mode only) ──────────────────────────
@@ -301,6 +316,16 @@ function auth_keycloak_logout_url(): string {
     }
 
     $params = ['client_id' => $clientId];
+
+    // The ID token stored by the login flow lets Keycloak skip its own logout
+    // confirmation page. It has to be read while the session is still alive:
+    // logout.php builds this URL before it calls auth_logout().
+    auth_session_start();
+    $idToken = $_SESSION[AUTH_KC_ID_TOKEN_KEY] ?? '';
+    if (is_string($idToken) && $idToken !== '') {
+        $params['id_token_hint'] = $idToken;
+    }
+
     $postLogoutRedirect = trim(getenv('KEYCLOAK_REDIRECT_URI') ?: '');
     if ($postLogoutRedirect !== '') {
         $params['post_logout_redirect_uri'] = $postLogoutRedirect;
@@ -308,6 +333,274 @@ function auth_keycloak_logout_url(): string {
 
     return $baseUrl . '/realms/' . urlencode($realm)
          . '/protocol/openid-connect/logout?' . http_build_query($params);
+}
+
+// ── Keycloak browser login (Authorization Code + PKCE) ────
+//
+// auth_check_keycloak() above validates a Bearer header, which only an API
+// client or an SSO aware reverse proxy can inject. A browser that reaches
+// Fiscal Hub directly is served by the flow below: /keycloak-login.php sends it
+// to the provider, the provider returns it to /keycloak-callback.php with a one
+// time code and the code is exchanged server side (PKCE + client secret).
+
+/** Session keys of an in-flight authorization request. */
+const AUTH_KC_STATE_KEY    = 'fiscalhub_oidc_state';
+const AUTH_KC_NONCE_KEY    = 'fiscalhub_oidc_nonce';
+const AUTH_KC_VERIFIER_KEY = 'fiscalhub_oidc_verifier';
+const AUTH_KC_REDIRECT_KEY = 'fiscalhub_oidc_redirect';
+const AUTH_KC_STARTED_KEY  = 'fiscalhub_oidc_started';
+const AUTH_KC_ID_TOKEN_KEY = 'fiscalhub_oidc_id_token';
+
+/** How long an in-flight authorization request stays valid (seconds). */
+const AUTH_KC_REQUEST_TTL = 600;
+
+/** base64url without padding (RFC 7636 / JWT encoding). */
+function auth_base64url(string $raw): string {
+    return rtrim(strtr(base64_encode($raw), '+/', '-_'), '=');
+}
+
+/** Random URL-safe token: state, nonce and PKCE verifier. */
+function auth_random_token(int $bytes = 32): string {
+    return auth_base64url(random_bytes($bytes));
+}
+
+/** PKCE S256 challenge for a verifier (RFC 7636 section 4.2). */
+function auth_code_challenge(string $verifier): string {
+    return auth_base64url(hash('sha256', $verifier, true));
+}
+
+/**
+ * Absolute URL the provider redirects back to (/keycloak-callback.php).
+ *
+ * KEYCLOAK_CALLBACK_URI overrides it for deployments whose request headers do
+ * not carry the public address; the value must be registered on the client as
+ * a valid redirect URI.
+ */
+function auth_keycloak_callback_uri(): string {
+    $override = trim(getenv('KEYCLOAK_CALLBACK_URI') ?: '');
+    if ($override !== '') {
+        return $override;
+    }
+
+    $https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on')
+        || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https');
+    $host = $_SERVER['HTTP_X_FORWARDED_HOST'] ?? ($_SERVER['HTTP_HOST'] ?? '');
+
+    if ($host === '') {
+        return '';
+    }
+
+    return ($https ? 'https://' : 'http://') . $host . '/keycloak-callback.php';
+}
+
+/**
+ * Start the flow: store the single use values in the session and return the
+ * provider authorization URL ('' when the mode is not usable).
+ */
+function auth_keycloak_authorize_url(string $destination): string {
+    if (!auth_keycloak_enabled()) {
+        return '';
+    }
+
+    $baseUrl     = rtrim(getenv('KEYCLOAK_BASE_URL') ?: '', '/');
+    $realm       = getenv('KEYCLOAK_REALM') ?: '';
+    $clientId    = getenv('KEYCLOAK_CLIENT_ID') ?: '';
+    $redirectUri = auth_keycloak_callback_uri();
+
+    if ($baseUrl === '' || $realm === '' || $clientId === '' || $redirectUri === '') {
+        return '';
+    }
+
+    $state    = auth_random_token(24);
+    $nonce    = auth_random_token(24);
+    $verifier = auth_random_token(48);
+
+    auth_session_start();
+    $_SESSION[AUTH_KC_STATE_KEY]    = $state;
+    $_SESSION[AUTH_KC_NONCE_KEY]    = $nonce;
+    $_SESSION[AUTH_KC_VERIFIER_KEY] = $verifier;
+    $_SESSION[AUTH_KC_REDIRECT_KEY] = $destination;
+    $_SESSION[AUTH_KC_STARTED_KEY]  = time();
+
+    return $baseUrl . '/realms/' . urlencode($realm) . '/protocol/openid-connect/auth?' . http_build_query([
+        'client_id'             => $clientId,
+        'response_type'         => 'code',
+        'scope'                 => 'openid profile email',
+        'redirect_uri'          => $redirectUri,
+        'state'                 => $state,
+        'nonce'                 => $nonce,
+        'code_challenge'        => auth_code_challenge($verifier),
+        'code_challenge_method' => 'S256',
+    ]);
+}
+
+/**
+ * Claims of a JWT payload, without verifying the signature: the token was
+ * received over TLS straight from the token endpoint of the provider and the
+ * access token is validated by Keycloak's /userinfo. It is used for the nonce
+ * check only, never to take an identity decision.
+ */
+function auth_jwt_claims(string $jwt): array {
+    $parts = explode('.', $jwt);
+    if (count($parts) !== 3) {
+        return [];
+    }
+    $payload = base64_decode(strtr($parts[1], '-_', '+/'), true);
+    if ($payload === false) {
+        return [];
+    }
+    $claims = json_decode($payload, true);
+    return is_array($claims) ? $claims : [];
+}
+
+/** POST a form to a Keycloak endpoint and decode the JSON answer (null on error). */
+function auth_keycloak_post(string $url, array $fields): ?array {
+    $ch = curl_init($url);
+    curl_setopt_array($ch, [
+        CURLOPT_POST           => true,
+        CURLOPT_POSTFIELDS     => http_build_query($fields),
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_TIMEOUT        => 10,
+        CURLOPT_FOLLOWLOCATION => false,
+        CURLOPT_HTTPHEADER     => ['Content-Type: application/x-www-form-urlencoded'],
+    ]);
+    $response  = curl_exec($ch);
+    $httpCode  = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $curlError = curl_error($ch);
+    curl_close($ch);
+
+    if ($response === false || $httpCode !== 200) {
+        error_log('Keycloak request failed: ' . ($curlError !== '' ? $curlError : 'HTTP ' . $httpCode));
+        return null;
+    }
+    $data = json_decode($response, true);
+    return is_array($data) ? $data : null;
+}
+
+/** Userinfo claims for an access token (null when the provider rejects it). */
+function auth_keycloak_userinfo(string $accessToken): ?array {
+    $baseUrl = rtrim(getenv('KEYCLOAK_BASE_URL') ?: '', '/');
+    $realm   = getenv('KEYCLOAK_REALM') ?: '';
+    if ($baseUrl === '' || $realm === '' || $accessToken === '') {
+        return null;
+    }
+
+    $ch = curl_init($baseUrl . '/realms/' . urlencode($realm) . '/protocol/openid-connect/userinfo');
+    curl_setopt_array($ch, [
+        CURLOPT_HTTPHEADER     => ['Authorization: Bearer ' . $accessToken],
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_TIMEOUT        => 10,
+        CURLOPT_FOLLOWLOCATION => false,
+    ]);
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+
+    if ($response === false || $httpCode !== 200 || $response === '') {
+        return null;
+    }
+    $claims = json_decode($response, true);
+    return is_array($claims) ? $claims : null;
+}
+
+/**
+ * Finish the flow: check the single use state, exchange the code and validate
+ * the identity before opening the session.
+ *
+ * Returns the sanitized redirect target stored by /keycloak-login.php on
+ * success, null on failure (the reason is written to the PHP error log).
+ */
+function auth_keycloak_complete_login(string $code, string $state): ?string {
+    if (!auth_keycloak_enabled() || $code === '' || $state === '') {
+        return null;
+    }
+
+    auth_session_start();
+
+    $expectedState = $_SESSION[AUTH_KC_STATE_KEY] ?? '';
+    $expectedNonce = $_SESSION[AUTH_KC_NONCE_KEY] ?? '';
+    $verifier      = $_SESSION[AUTH_KC_VERIFIER_KEY] ?? '';
+    $destination   = $_SESSION[AUTH_KC_REDIRECT_KEY] ?? '/';
+    $startedAt     = (int) ($_SESSION[AUTH_KC_STARTED_KEY] ?? 0);
+
+    // Single use: the values are gone whether the exchange succeeds or not.
+    unset(
+        $_SESSION[AUTH_KC_STATE_KEY],
+        $_SESSION[AUTH_KC_NONCE_KEY],
+        $_SESSION[AUTH_KC_VERIFIER_KEY],
+        $_SESSION[AUTH_KC_REDIRECT_KEY],
+        $_SESSION[AUTH_KC_STARTED_KEY]
+    );
+
+    if (!is_string($expectedState) || $expectedState === '' || !hash_equals($expectedState, $state)) {
+        error_log('Keycloak callback rejected: state mismatch');
+        return null;
+    }
+    if ($startedAt > 0 && $startedAt + AUTH_KC_REQUEST_TTL < time()) {
+        error_log('Keycloak callback rejected: expired authorization request');
+        return null;
+    }
+    if (!is_string($verifier) || $verifier === '') {
+        error_log('Keycloak callback rejected: missing PKCE verifier');
+        return null;
+    }
+
+    $baseUrl     = rtrim(getenv('KEYCLOAK_BASE_URL') ?: '', '/');
+    $realm       = getenv('KEYCLOAK_REALM') ?: '';
+    $clientId    = getenv('KEYCLOAK_CLIENT_ID') ?: '';
+    $redirectUri = auth_keycloak_callback_uri();
+
+    if ($baseUrl === '' || $realm === '' || $clientId === '' || $redirectUri === '') {
+        return null;
+    }
+
+    $token = auth_keycloak_post(
+        $baseUrl . '/realms/' . urlencode($realm) . '/protocol/openid-connect/token',
+        [
+            'grant_type'    => 'authorization_code',
+            'code'          => $code,
+            'redirect_uri'  => $redirectUri,
+            'client_id'     => $clientId,
+            'client_secret' => getenv('KEYCLOAK_CLIENT_SECRET') ?: '',
+            'code_verifier' => $verifier,
+        ]
+    );
+
+    if ($token === null || empty($token['access_token'])) {
+        error_log('Keycloak callback rejected: token exchange failed');
+        return null;
+    }
+
+    $idToken = is_string($token['id_token'] ?? null) ? $token['id_token'] : '';
+    if ($idToken !== '' && is_string($expectedNonce) && $expectedNonce !== '') {
+        $claims = auth_jwt_claims($idToken);
+        if (($claims['nonce'] ?? '') !== $expectedNonce) {
+            error_log('Keycloak callback rejected: nonce mismatch');
+            return null;
+        }
+    }
+
+    // The access token is validated by Keycloak itself: /userinfo answers 401
+    // for an expired or foreign token, exactly like the Bearer path above.
+    $userinfo = auth_keycloak_userinfo((string) $token['access_token']);
+    if ($userinfo === null || empty($userinfo['email'])) {
+        error_log('Keycloak callback rejected: userinfo returned no e-mail');
+        return null;
+    }
+
+    $email        = (string) $userinfo['email'];
+    $allowedEmail = getenv('KEYCLOAK_EMAIL_ACCOUNT') ?: '';
+    if ($allowedEmail !== '' && $email !== $allowedEmail) {
+        error_log('Keycloak callback rejected: ' . $email . ' is not the allowed account');
+        return null;
+    }
+
+    auth_set_authenticated();
+    if ($idToken !== '') {
+        $_SESSION[AUTH_KC_ID_TOKEN_KEY] = $idToken;
+    }
+
+    return auth_safe_redirect(is_string($destination) ? $destination : '/');
 }
 
 // ── Keycloak Bearer token validation (internal) ────────────
@@ -327,7 +620,7 @@ function auth_check_keycloak(): bool {
         $result = true;
         return true;
     }
-    if (!empty($_SESSION['danfe_authenticated'])) {
+    if (!empty($_SESSION['fiscalhub_authenticated'])) {
         // Session minted by a different AUTH_METHOD (e.g. account) — revoke it
         // instead of trusting it as a keycloak session.
         auth_discard_stale_session();
@@ -350,27 +643,8 @@ function auth_check_keycloak(): bool {
 
     $accessToken = substr($authHeader, 7);
 
-    $userinfoUrl = $keycloakBaseUrl . '/realms/' . urlencode($keycloakRealm)
-                 . '/protocol/openid-connect/userinfo';
-
-    $ch = curl_init($userinfoUrl);
-    curl_setopt_array($ch, [
-        CURLOPT_HTTPHEADER     => ['Authorization: Bearer ' . $accessToken],
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_TIMEOUT        => 10,
-        CURLOPT_FOLLOWLOCATION => false,
-    ]);
-
-    $userinfoResponse = curl_exec($ch);
-    $userinfoHttpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
-
-    if ($userinfoHttpCode !== 200 || empty($userinfoResponse)) {
-        return false;
-    }
-
-    $userinfo = json_decode($userinfoResponse, true);
-    if (!$userinfo || !isset($userinfo['email'])) {
+    $userinfo = auth_keycloak_userinfo($accessToken);
+    if ($userinfo === null || !isset($userinfo['email'])) {
         return false;
     }
 

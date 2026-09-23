@@ -1,6 +1,6 @@
 services:
   fiscalhub:
-    image: ghcr.io/ivancarlosti/danfeonline:latest
+    image: ghcr.io/ivancarlosti/fiscalhub:latest
     container_name: fiscalhub_app
     restart: unless-stopped
     ports:

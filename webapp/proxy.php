@@ -25,11 +25,12 @@ if (!auth_check()) {
 }
 
 // ── Load configuration from environment ─────────────────────
-// Prefer the MEUDANFE_API_* names; keep legacy API_* names as a
-// backward-compatible fallback for existing deployments.
-$apiBase    = getenv('MEUDANFE_API_BASE')    ?: (getenv('API_BASE')    ?: 'https://api.meudanfe.com.br/v2');
-$apiKey     = getenv('MEUDANFE_API_KEY')     ?: (getenv('API_KEY')     ?: '');
-$apiTimeout = (int)(getenv('MEUDANFE_API_TIMEOUT') ?: (getenv('API_TIMEOUT') ?: 60));
+// FISCALHUB_API_* is the current name. MEUDANFE_API_* (the previous product
+// name) and the legacy API_* names are still read so existing deployments keep
+// working without touching their .env.
+$apiBase    = getenv('FISCALHUB_API_BASE')    ?: (getenv('MEUDANFE_API_BASE')    ?: (getenv('API_BASE')    ?: 'https://api.meudanfe.com.br/v2'));
+$apiKey     = getenv('FISCALHUB_API_KEY')     ?: (getenv('MEUDANFE_API_KEY')     ?: (getenv('API_KEY')     ?: ''));
+$apiTimeout = (int)(getenv('FISCALHUB_API_TIMEOUT') ?: (getenv('MEUDANFE_API_TIMEOUT') ?: (getenv('API_TIMEOUT') ?: 60)));
 
 // ── Fail early if API key is missing ────────────────────────
 if ($apiKey === '') {

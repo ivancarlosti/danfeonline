@@ -5,16 +5,16 @@
 Fiscal Hub is a modern, progressive web application for generating and visualizing Brazilian electronic invoice documents (DANFE — Documento Auxiliar da Nota Fiscal Eletrônica). It also provides CNPJ lookups, offline XML-to-PDF generation, online API lookup by access key, camera barcode scanning, and a comprehensive municipal NF-e consultation directory — all packaged in a lightweight Docker container.
 
 <!-- buttons -->
-[![Stars](https://img.shields.io/github/stars/ivancarlosti/danfeonline?label=⭐%20Stars&color=gold&style=flat)](https://github.com/ivancarlosti/danfeonline/stargazers)
-[![Watchers](https://img.shields.io/github/watchers/ivancarlosti/danfeonline?label=Watchers&style=flat&color=red)](https://github.com/sponsors/ivancarlosti)
-[![Forks](https://img.shields.io/github/forks/ivancarlosti/danfeonline?label=Forks&style=flat&color=ff69b4)](https://github.com/sponsors/ivancarlosti)
-[![Downloads](https://img.shields.io/github/downloads/ivancarlosti/danfeonline/total?label=Downloads&color=success)](https://github.com/ivancarlosti/danfeonline/releases)
-[![GitHub commit activity](https://img.shields.io/github/commit-activity/m/ivancarlosti/danfeonline?label=Activity)](https://github.com/ivancarlosti/danfeonline/pulse)
-[![GitHub Issues](https://img.shields.io/github/issues/ivancarlosti/danfeonline?label=Issues&color=orange)](https://github.com/ivancarlosti/danfeonline/issues)  
-[![License](https://img.shields.io/github/license/ivancarlosti/danfeonline?label=License)](LICENSE)
-[![GitHub last commit](https://img.shields.io/github/last-commit/ivancarlosti/danfeonline?label=Last%20Commit)](https://github.com/ivancarlosti/danfeonline/commits)
-[![Security](https://img.shields.io/badge/Security-View%20Here-purple)](https://github.com/ivancarlosti/danfeonline/security)
-[![Code of Conduct](https://img.shields.io/badge/Code%20of%20Conduct-2.1-4baaaa)](https://github.com/ivancarlosti/danfeonline?tab=coc-ov-file)
+[![Stars](https://img.shields.io/github/stars/ivancarlosti/fiscalhub?label=⭐%20Stars&color=gold&style=flat)](https://github.com/ivancarlosti/fiscalhub/stargazers)
+[![Watchers](https://img.shields.io/github/watchers/ivancarlosti/fiscalhub?label=Watchers&style=flat&color=red)](https://github.com/sponsors/ivancarlosti)
+[![Forks](https://img.shields.io/github/forks/ivancarlosti/fiscalhub?label=Forks&style=flat&color=ff69b4)](https://github.com/sponsors/ivancarlosti)
+[![Downloads](https://img.shields.io/github/downloads/ivancarlosti/fiscalhub/total?label=Downloads&color=success)](https://github.com/ivancarlosti/fiscalhub/releases)
+[![GitHub commit activity](https://img.shields.io/github/commit-activity/m/ivancarlosti/fiscalhub?label=Activity)](https://github.com/ivancarlosti/fiscalhub/pulse)
+[![GitHub Issues](https://img.shields.io/github/issues/ivancarlosti/fiscalhub?label=Issues&color=orange)](https://github.com/ivancarlosti/fiscalhub/issues)  
+[![License](https://img.shields.io/github/license/ivancarlosti/fiscalhub?label=License)](LICENSE)
+[![GitHub last commit](https://img.shields.io/github/last-commit/ivancarlosti/fiscalhub?label=Last%20Commit)](https://github.com/ivancarlosti/fiscalhub/commits)
+[![Security](https://img.shields.io/badge/Security-View%20Here-purple)](https://github.com/ivancarlosti/fiscalhub/security)
+[![Code of Conduct](https://img.shields.io/badge/Code%20of%20Conduct-2.1-4baaaa)](https://github.com/ivancarlosti/fiscalhub?tab=coc-ov-file)
 <!-- endbuttons -->
 
 ---
@@ -168,9 +168,9 @@ PORT=8080
 DOMAIN=fiscalhub.example.com
 
 # Meu Danfe API v2 (required for access key lookups)
-MEUDANFE_API_BASE=https://api.meudanfe.com.br/v2
-MEUDANFE_API_KEY=your-api-key-here
-MEUDANFE_API_TIMEOUT=60
+FISCALHUB_API_BASE=https://api.meudanfe.com.br/v2
+FISCALHUB_API_KEY=your-api-key-here
+FISCALHUB_API_TIMEOUT=60
 
 # BrasilAPI (free CNPJ lookups, no API key required)
 BRASILAPI_API_BASE=https://brasilapi.com.br/api/cnpj/v1
@@ -209,9 +209,11 @@ The default tab is "Upload XML" — drop an NFe XML file to instantly generate a
 
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
-| `MEUDANFE_API_BASE` | No | `https://api.meudanfe.com.br/v2` | Meu Danfe API base URL |
-| `MEUDANFE_API_KEY` | No* | — | Your Meu Danfe API key (*required for online lookups) |
-| `MEUDANFE_API_TIMEOUT` | No | `60` | Seconds before timing out SEFAZ queries |
+| `FISCALHUB_API_BASE` | No | `https://api.meudanfe.com.br/v2` | Meu Danfe API base URL |
+| `FISCALHUB_API_KEY` | No* | — | Your Meu Danfe API key (*required for online lookups) |
+| `FISCALHUB_API_TIMEOUT` | No | `60` | Seconds before timing out SEFAZ queries |
+
+> The former `MEUDANFE_API_*` variables are still read as a fallback, so an existing `docker/.env` keeps working; `FISCALHUB_API_*` is the documented name.
 
 ### BrasilAPI
 
@@ -236,8 +238,9 @@ The default tab is "Upload XML" — drop an NFe XML file to instantly generate a
 | `KEYCLOAK_REALM` | No | — | Keycloak realm name |
 | `KEYCLOAK_CLIENT_ID` | No | — | Keycloak client ID |
 | `KEYCLOAK_CLIENT_SECRET` | No | — | Keycloak client secret |
-| `KEYCLOAK_REDIRECT_URI` | No | — | OAuth2 redirect URI |
-| `KEYCLOAK_EMAIL_ACCOUNT` | No | — | Restrict access to this email |
+| `KEYCLOAK_REDIRECT_URI` | No | — | Where Keycloak sends the browser back **after a logout** (post logout redirect URI) |
+| `KEYCLOAK_CALLBACK_URI` | No | request URL | Full URL of `/keycloak-callback.php` when it cannot be derived from the request; must be registered on the client |
+| `KEYCLOAK_EMAIL_ACCOUNT` | No | — | Restrict access to this email (both flows) |
 
 ---
 
@@ -283,11 +286,27 @@ KEYCLOAK_REALM=YourRealm
 KEYCLOAK_CLIENT_ID=fiscalhub
 KEYCLOAK_CLIENT_SECRET=your_client_secret
 KEYCLOAK_REDIRECT_URI=https://fiscalhub.example.com/
+KEYCLOAK_CALLBACK_URI=
 KEYCLOAK_EMAIL_ACCOUNT=you@example.com
 ```
-Bearer token–based authentication validated server-side against Keycloak's `/userinfo` endpoint. The `Authorization: Bearer <token>` header is normally injected by an SSO-aware reverse proxy (e.g. oauth2-proxy, Traefik ForwardAuth) or API client. If `KEYCLOAK_EMAIL_ACCOUNT` is set, only that specific email is allowed.
+Two ways to authenticate against Keycloak:
 
-Sessions are bound to the auth method that created them, so switching `AUTH_METHOD` from `account` to `keycloak` (or back) **revokes every previously authenticated session**: the stored `danfe_auth_method` no longer matches and the session is destroyed. While `AUTH_METHOD=keycloak`, the username/password form is suppressed on the login page and `login.php` refuses credentials outright, so leftover `ACCOUNT_LOGIN`/`ACCOUNT_PASSWORD` values can no longer mint a session. Logging out also triggers Keycloak's RP-initiated logout (`end_session_endpoint`) when `KEYCLOAK_CLIENT_ID` and `KEYCLOAK_REDIRECT_URI` are set.
+1. **Browser login (built in).** In `keycloak` mode the login page shows an
+   *Entrar com Keycloak* button that starts the OpenID Connect **Authorization
+   Code + PKCE** flow (`/keycloak-login.php` → provider →
+   `/keycloak-callback.php`). The code is exchanged server side with the client
+   secret, the access token is validated against the realm's `/userinfo`
+   endpoint and only then is the browser session opened. The client in Keycloak
+   must be **confidential** with the **Standard Flow** enabled and its *Valid
+   redirect URIs* must contain `https://<your-host>/keycloak-callback.php`.
+2. **Bearer token (reverse proxy / API client).** A request carrying
+   `Authorization: Bearer <token>` is validated against `/userinfo` — use this
+   when an SSO-aware reverse proxy (oauth2-proxy, Traefik ForwardAuth) or an API
+   client already speaks to Keycloak.
+
+If `KEYCLOAK_EMAIL_ACCOUNT` is set, only that specific e-mail address is allowed.
+
+Sessions are bound to the auth method that created them, so switching `AUTH_METHOD` from `account` to `keycloak` (or back) **revokes every previously authenticated session**: the stored `fiscalhub_auth_method` no longer matches and the session is destroyed. While `AUTH_METHOD=keycloak`, the username/password form is suppressed on the login page and `login.php` refuses credentials outright, so leftover `ACCOUNT_LOGIN`/`ACCOUNT_PASSWORD` values can no longer mint a session. Logging out also triggers Keycloak's RP-initiated logout (`end_session_endpoint`) when `KEYCLOAK_CLIENT_ID` and `KEYCLOAK_REDIRECT_URI` are set.
 
 ---
 
@@ -332,7 +351,7 @@ server {
 | Barcode Scanner | Quagga2 1.8.3 |
 | HTTP Client (PHP) | cURL |
 | Auth (Session) | PHP sessions with `hash_equals()` credential check + optional reCAPTCHA v2 |
-| Auth (SSO) | cURL to Keycloak OIDC `/userinfo` |
+| Auth (SSO) | Keycloak OIDC: Authorization Code + PKCE in the browser, `/userinfo` Bearer validation via cURL |
 | Containerization | Docker + Docker Compose |
 | CI/CD | GitHub Actions (multi-arch build + release) |
 
@@ -341,7 +360,7 @@ server {
 ## Troubleshooting
 
 **Online lookup fails with "Server configuration error":**
-- Ensure `MEUDANFE_API_KEY` is set in `docker/.env` and is a valid Meu Danfe API key.
+- Ensure `FISCALHUB_API_KEY` is set in `docker/.env` and is a valid Meu Danfe API key.
 - Restart the container after changing `.env`: `docker compose restart`
 
 **CNPJ lookup fails:**
@@ -370,7 +389,7 @@ server {
 - If the login page redirects back to itself, check that your browser accepts cookies from the site.
 - Restart the container after changing `.env`: `docker compose restart`
 - reCAPTCHA: a "Falha na verificação de segurança" message means the token was missing or Google rejected it. Confirm `RECAPTCHA_SITE_KEY`/`RECAPTCHA_SECRET_KEY` are a matching **v2 checkbox** key pair and that the container can reach `www.google.com` — verification fails closed on network errors.
-- Keycloak mode shows no username/password form by design. Old sessions from `account` mode are revoked automatically when `AUTH_METHOD` changes; clear cookies if a browser still holds a stale session.
+- Keycloak mode hides the username/password form by design: use the *Entrar com Keycloak* button, which starts the provider flow. If it reports an incomplete configuration, set `KEYCLOAK_CLIENT_ID`/`KEYCLOAK_CLIENT_SECRET` and register `https://<host>/keycloak-callback.php` (or `KEYCLOAK_CALLBACK_URI`) as a valid redirect URI on the client. If the provider answers *Invalid redirect uri* after a logout, register `KEYCLOAK_REDIRECT_URI` under *Valid post logout redirect URIs*. Old sessions from `account` mode are revoked automatically when `AUTH_METHOD` changes; clear cookies if a browser still holds a stale session.
 - For Keycloak auth behind a reverse proxy: Nginx strips the `Authorization` header by default. Add `proxy_set_header Authorization $http_authorization;` to your Nginx config.
 
 ---

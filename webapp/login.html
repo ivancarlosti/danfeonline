@@ -73,15 +73,16 @@
             </button>
         </form>
 
-        <!-- SSO notice (shown when AUTH_METHOD=keycloak) -->
+        <!-- SSO login (shown when AUTH_METHOD=keycloak) -->
         <div class="login-sso" id="login-sso" hidden>
             <i class="fa-solid fa-shield-halved login-sso__icon"></i>
             <p class="login-sso__text">
                 Esta aplicação usa autenticação SSO (Keycloak). O acesso é feito pelo
                 provedor de identidade — usuário e senha não são utilizados neste modo.
             </p>
-            <a class="login-form__submit login-sso__link" href="/">
-                <i class="fa-solid fa-rotate-right"></i> Tentar novamente
+            <!-- href is completed with the redirect target by the script below -->
+            <a class="login-form__submit login-sso__link" id="login-sso-start" href="keycloak-login.php">
+                <i class="fa-solid fa-right-to-bracket"></i> Entrar com Keycloak
             </a>
         </div>
 
@@ -109,7 +110,9 @@
     const messages = {
         invalid: 'Usuário ou senha inválidos. Tente novamente.',
         empty: 'Preencha todos os campos.',
-        captcha: 'Falha na verificação de segurança. Marque "Não sou um robô" e tente novamente.'
+        captcha: 'Falha na verificação de segurança. Marque "Não sou um robô" e tente novamente.',
+        sso: 'Não foi possível concluir o login pelo provedor de identidade. Tente novamente.',
+        sso_config: 'O login SSO está incompleto neste servidor (cliente ou URL de callback). Contate o administrador.'
     };
 
     if (messages[errorCode]) {
@@ -164,6 +167,10 @@
             // keycloak mode: the credentials form must never be shown
             if (config.authMethod === 'keycloak') {
                 form.hidden = true;
+                // The button starts the provider flow and comes back to the page
+                // the user asked for (keycloak-login.php does the redirect).
+                document.getElementById('login-sso-start').href =
+                    'keycloak-login.php?redirect=' + encodeURIComponent(redirect);
                 document.getElementById('login-sso').hidden = false;
                 return;
             }

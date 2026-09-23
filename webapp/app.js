@@ -20,6 +20,31 @@
         };
 
         // =====================================================
+        // LOCAL STORAGE (keys renamed from danfe-* to fiscalhub-*)
+        // =====================================================
+        const LEGACY_STORAGE_KEYS = {
+            lang: 'danfe-lang',
+            theme: 'danfe-theme',
+            cnpjHistory: 'danfe-cnpj-history',
+        };
+
+        /**
+         * Read a stored value. The previous product name left data under the
+         * danfe-* keys, so the first read moves it to the fiscalhub-* key
+         * instead of dropping the saved preference or lookup history.
+         */
+        function readStored(name, legacyName) {
+            const current = localStorage.getItem(name);
+            if (current !== null) return current;
+            const legacy = localStorage.getItem(legacyName);
+            if (legacy !== null) {
+                localStorage.setItem(name, legacy);
+                localStorage.removeItem(legacyName);
+            }
+            return legacy;
+        }
+
+        // =====================================================
         // DOM REFERENCES
         // =====================================================
         const $ = (sel) => document.querySelector(sel);
@@ -574,7 +599,7 @@
 
         function setLanguage(lang) {
             state.lang = lang;
-            localStorage.setItem('danfe-lang', lang);
+            localStorage.setItem('fiscalhub-lang', lang);
             applyTranslations();
         }
 
@@ -586,7 +611,7 @@
             document.body.classList.toggle('theme-dark', theme === 'dark');
             const icon = dom.btnThemeToggle.querySelector('i');
             icon.className = theme === 'dark' ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
-            localStorage.setItem('danfe-theme', theme);
+            localStorage.setItem('fiscalhub-theme', theme);
         }
 
         function toggleTheme() {
@@ -1863,7 +1888,7 @@
         // BRASILAPI CNPJ INTEGRATION (brasilapi.com.br)
         // =====================================================
         const BRASILAPI_PROXY_URL = 'brasilapi-proxy.php';
-        const CNPJ_HISTORY_KEY = 'danfe-cnpj-history';
+        const CNPJ_HISTORY_KEY = 'fiscalhub-cnpj-history';
         const CNPJ_HISTORY_MAX = 10;
 
         // ----- CNPJ validation (numeric or alphanumeric) -----
@@ -2076,7 +2101,7 @@
         // ----- Local history (localStorage) -----
         function loadCnpjHistory() {
             try {
-                const raw = localStorage.getItem(CNPJ_HISTORY_KEY);
+                const raw = readStored(CNPJ_HISTORY_KEY, LEGACY_STORAGE_KEYS.cnpjHistory);
                 const arr = raw ? JSON.parse(raw) : [];
                 return Array.isArray(arr) ? arr : [];
             } catch (_) {
@@ -2233,11 +2258,11 @@
         // =====================================================
         function init() {
             // Restore saved theme
-            const savedTheme = localStorage.getItem('danfe-theme') || 'light';
+            const savedTheme = readStored('fiscalhub-theme', LEGACY_STORAGE_KEYS.theme) || 'light';
             applyTheme(savedTheme);
 
             // Restore saved language
-            const savedLang = localStorage.getItem('danfe-lang') || 'pt';
+            const savedLang = readStored('fiscalhub-lang', LEGACY_STORAGE_KEYS.lang) || 'pt';
             setLanguage(savedLang);
 
             // Set initial tab

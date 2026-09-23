@@ -24,12 +24,8 @@ $username = trim($_POST['username'] ?? '');
 $password = $_POST['password'] ?? '';
 $redirect = $_POST['redirect'] ?? '/';
 
-// Validate the redirect target (only allow local paths)
-if (!str_starts_with($redirect, '/') || str_contains($redirect, '//')) {
-    $redirect = '/';
-}
-// Prevent open redirect: strip any host portion
-$redirect = parse_url($redirect, PHP_URL_PATH) ?: '/';
+// Validate the redirect target (only local paths; no open redirect)
+$redirect = auth_safe_redirect($redirect);
 
 if ($username === '' || $password === '') {
     header('Location: /login.html?error=empty&redirect=' . urlencode($redirect));
