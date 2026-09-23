@@ -30,8 +30,8 @@
             <span id="login-error-text"></span>
         </div>
 
-        <!-- Login Form -->
-        <form class="login-form" method="POST" action="login.php" autocomplete="off">
+        <!-- Login Form (account mode) -->
+        <form class="login-form" method="POST" action="login.php" autocomplete="off" id="login-form">
             <input type="hidden" name="redirect" id="login-redirect" value="/">
 
             <div class="login-form__field">
@@ -65,40 +65,116 @@
                 >
             </div>
 
-            <button type="submit" class="login-form__submit">
+            <!-- Google reCAPTCHA v2 — filled in by auth-config.php when enabled -->
+            <div class="login-form__captcha" id="login-captcha" hidden></div>
+
+            <button type="submit" class="login-form__submit" id="login-submit">
                 <i class="fa-solid fa-right-to-bracket"></i> Entrar
             </button>
         </form>
+
+        <!-- SSO notice (shown when AUTH_METHOD=keycloak) -->
+        <div class="login-sso" id="login-sso" hidden>
+            <i class="fa-solid fa-shield-halved login-sso__icon"></i>
+            <p class="login-sso__text">
+                Esta aplicação usa autenticação SSO (Keycloak). O acesso é feito pelo
+                provedor de identidade — usuário e senha não são utilizados neste modo.
+            </p>
+            <a class="login-form__submit login-sso__link" href="/">
+                <i class="fa-solid fa-rotate-right"></i> Tentar novamente
+            </a>
+        </div>
 
     </div>
 </div>
 
 <script>
 (function() {
-    // Set redirect from URL parameter
     const params = new URLSearchParams(window.location.search);
     const redirect = params.get('redirect') || '/';
+    const errorCode = params.get('error');
+
     document.getElementById('login-redirect').value = redirect;
 
-    // Show error message if present
-    const error = params.get('error');
+    const form = document.getElementById('login-form');
     const errorBox = document.getElementById('login-error');
     const errorText = document.getElementById('login-error-text');
 
-    if (error === 'invalid') {
-        errorText.textContent = 'Usuário ou senha inválidos. Tente novamente.';
+    function showError(message, type) {
+        errorText.textContent = message;
         errorBox.style.display = 'flex';
-    } else if (error === 'empty') {
-        errorText.textContent = 'Preencha todos os campos.';
-        errorBox.style.display = 'flex';
+        errorBox.classList.toggle('login-error--info', type === 'info');
     }
 
-    // Show logged-out message
-    if (params.get('logged_out') === '1') {
-        errorText.textContent = 'Você saiu da sua conta.';
-        errorBox.style.display = 'flex';
-        errorBox.classList.add('login-error--info');
+    const messages = {
+        invalid: 'Usuário ou senha inválidos. Tente novamente.',
+        empty: 'Preencha todos os campos.',
+        captcha: 'Falha na verificação de segurança. Marque "Não sou um robô" e tente novamente.'
+    };
+
+    if (messages[errorCode]) {
+        showError(messages[errorCode]);
+    } else if (params.get('logged_out') === '1') {
+        showError('Você saiu da sua conta.', 'info');
     }
+
+    // ── Google reCAPTCHA v2 (account mode, only when configured) ──
+    let recaptchaWidgetId = null;
+
+    window.__fiscalhubRecaptchaReady = function() {
+        recaptchaWidgetId = window.grecaptcha.render('login-captcha', {
+            sitekey: window.__fiscalhubRecaptchaSiteKey
+        });
+        // Tokens are single-use — a failed attempt needs a fresh widget
+        if (errorCode === 'captcha' && typeof window.grecaptcha.reset === 'function') {
+            window.grecaptcha.reset(recaptchaWidgetId);
+        }
+    };
+
+    function initRecaptcha(siteKey) {
+        window.__fiscalhubRecaptchaSiteKey = siteKey;
+        document.getElementById('login-captcha').hidden = false;
+        const script = document.createElement('script');
+        script.src = 'https://www.google.com/recaptcha/api.js?onload=__fiscalhubRecaptchaReady&render=explicit';
+        script.async = true;
+        script.defer = true;
+        document.head.appendChild(script);
+    }
+
+    form.addEventListener('submit', function(e) {
+        // reCAPTCHA is not enabled on this deployment
+        if (recaptchaWidgetId === null) return;
+
+        const token = window.grecaptcha && typeof window.grecaptcha.getResponse === 'function'
+            ? window.grecaptcha.getResponse(recaptchaWidgetId)
+            : '';
+
+        if (!token) {
+            e.preventDefault();
+            showError('Marque a caixa "Não sou um robô" para continuar.');
+        }
+    });
+
+    // ── Server-side auth configuration (non-secret values only) ──
+    fetch('auth-config.php', { credentials: 'same-origin', cache: 'no-store' })
+        .then(function(response) {
+            return response.ok ? response.json() : Promise.reject(new Error('config'));
+        })
+        .then(function(config) {
+            // keycloak mode: the credentials form must never be shown
+            if (config.authMethod === 'keycloak') {
+                form.hidden = true;
+                document.getElementById('login-sso').hidden = false;
+                return;
+            }
+            if (config.recaptchaEnabled && config.recaptchaSiteKey) {
+                initRecaptcha(config.recaptchaSiteKey);
+            }
+        })
+        .catch(function() {
+            // Keep the default account form when the config cannot be loaded;
+            // the server still enforces the auth method and reCAPTCHA.
+        });
 })();
 </script>
 

@@ -121,8 +121,9 @@ fiscalhub/
 │   ├── auth.php                  # Authentication module (session/OIDC)
 │   ├── proxy.php                 # Server-side CORS proxy for Meu Danfe API
 │   ├── brasilapi-proxy.php       # Server-side CORS proxy for BrasilAPI
-│   ├── login.html                # Login form page (account mode)
+│   ├── login.html                # Login form page (account mode, reCAPTCHA)
 │   ├── login.php                 # Login handler (validates credentials)
+│   ├── auth-config.php           # Public login config (auth method + site key)
 │   └── logout.php                # Logout handler (destroys session)
 ├── docker/
 │   ├── docker-compose.yml        # Single-service container stack
@@ -228,6 +229,9 @@ The default tab is "Upload XML" — drop an NFe XML file to instantly generate a
 | `AUTH_METHOD` | No | `none` | `none`, `account`, or `keycloak` |
 | `ACCOUNT_LOGIN` | No | — | Username for `account` auth |
 | `ACCOUNT_PASSWORD` | No | — | Password for `account` auth |
+| `RECAPTCHA_SITE_KEY` | No | — | Google reCAPTCHA v2 site key (enables CAPTCHA in `account` mode) |
+| `RECAPTCHA_SECRET_KEY` | No | — | Google reCAPTCHA v2 secret key (server-side verification) |
+| `RECAPTCHA_VERIFY_URL` | No | Google endpoint | Override the siteverify URL (testing only) |
 | `KEYCLOAK_BASE_URL` | No | — | Keycloak server URL |
 | `KEYCLOAK_REALM` | No | — | Keycloak realm name |
 | `KEYCLOAK_CLIENT_ID` | No | — | Keycloak client ID |
@@ -255,6 +259,22 @@ Visitors are redirected to a styled login page (`login.html`) where they enter t
 
 Session credentials are compared using `hash_equals()` for timing-attack resistance.
 
+#### Optional: Google reCAPTCHA v2
+
+```env
+AUTH_METHOD=account
+ACCOUNT_LOGIN=admin
+ACCOUNT_PASSWORD=your_secure_password
+RECAPTCHA_SITE_KEY=your_site_key
+RECAPTCHA_SECRET_KEY=your_secret_key
+```
+
+When **both** reCAPTCHA keys are set, the login page renders a Google reCAPTCHA v2 checkbox. The response token is verified server-side against `https://www.google.com/recaptcha/api/siteverify` **before** the credentials are compared, so the form cannot be used as a credential oracle. Failed verifications redirect back with `?error=captcha` and the widget is reset (tokens are single-use). The secret key never leaves the server — `auth-config.php` exposes only the public site key.
+
+Verification **fails closed** (blocks login) if Google's endpoint is unreachable or returns an error, and every rejection is written to the PHP error log together with Google's `error-codes`. Leaving the keys empty disables the feature and restores the previous behavior.
+
+> reCAPTCHA applies to `account` mode only; `keycloak` mode relies on the identity provider's own protections.
+
 ### Keycloak (SSO)
 ```env
 AUTH_METHOD=keycloak
@@ -265,7 +285,9 @@ KEYCLOAK_CLIENT_SECRET=your_client_secret
 KEYCLOAK_REDIRECT_URI=https://fiscalhub.example.com/
 KEYCLOAK_EMAIL_ACCOUNT=you@example.com
 ```
-Bearer token-based authentication. The SPA obtains an access token from Keycloak (via Authorization Code flow with PKCE) and includes it in the `Authorization: Bearer <token>` header. The proxy validates the token against Keycloak's `/userinfo` endpoint. If `KEYCLOAK_EMAIL_ACCOUNT` is set, only that specific email is allowed.
+Bearer token–based authentication validated server-side against Keycloak's `/userinfo` endpoint. The `Authorization: Bearer <token>` header is normally injected by an SSO-aware reverse proxy (e.g. oauth2-proxy, Traefik ForwardAuth) or API client. If `KEYCLOAK_EMAIL_ACCOUNT` is set, only that specific email is allowed.
+
+Sessions are bound to the auth method that created them, so switching `AUTH_METHOD` from `account` to `keycloak` (or back) **revokes every previously authenticated session**: the stored `danfe_auth_method` no longer matches and the session is destroyed. While `AUTH_METHOD=keycloak`, the username/password form is suppressed on the login page and `login.php` refuses credentials outright, so leftover `ACCOUNT_LOGIN`/`ACCOUNT_PASSWORD` values can no longer mint a session. Logging out also triggers Keycloak's RP-initiated logout (`end_session_endpoint`) when `KEYCLOAK_CLIENT_ID` and `KEYCLOAK_REDIRECT_URI` are set.
 
 ---
 
@@ -309,7 +331,7 @@ server {
 | PDF Generation | pdfmake 0.2.10 |
 | Barcode Scanner | Quagga2 1.8.3 |
 | HTTP Client (PHP) | cURL |
-| Auth (Session) | PHP sessions with `hash_equals()` credential check |
+| Auth (Session) | PHP sessions with `hash_equals()` credential check + optional reCAPTCHA v2 |
 | Auth (SSO) | cURL to Keycloak OIDC `/userinfo` |
 | Containerization | Docker + Docker Compose |
 | CI/CD | GitHub Actions (multi-arch build + release) |
@@ -347,6 +369,8 @@ server {
 - Ensure `AUTH_METHOD=account` and both `ACCOUNT_LOGIN` and `ACCOUNT_PASSWORD` are set in `docker/.env`.
 - If the login page redirects back to itself, check that your browser accepts cookies from the site.
 - Restart the container after changing `.env`: `docker compose restart`
+- reCAPTCHA: a "Falha na verificação de segurança" message means the token was missing or Google rejected it. Confirm `RECAPTCHA_SITE_KEY`/`RECAPTCHA_SECRET_KEY` are a matching **v2 checkbox** key pair and that the container can reach `www.google.com` — verification fails closed on network errors.
+- Keycloak mode shows no username/password form by design. Old sessions from `account` mode are revoked automatically when `AUTH_METHOD` changes; clear cookies if a browser still holds a stale session.
 - For Keycloak auth behind a reverse proxy: Nginx strips the `Authorization` header by default. Add `proxy_set_header Authorization $http_authorization;` to your Nginx config.
 
 ---

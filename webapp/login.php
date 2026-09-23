@@ -7,6 +7,13 @@
 
 require_once __DIR__ . '/auth.php';
 
+// Username/password login only exists in account mode. In keycloak mode the
+// credentials form must never be accepted (see auth_login()).
+if (auth_method() !== 'account') {
+    header('Location: /');
+    exit;
+}
+
 // Only accept POST
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header('Location: /login.html');
@@ -26,6 +33,13 @@ $redirect = parse_url($redirect, PHP_URL_PATH) ?: '/';
 
 if ($username === '' || $password === '') {
     header('Location: /login.html?error=empty&redirect=' . urlencode($redirect));
+    exit;
+}
+
+// reCAPTCHA (no-op when disabled) — verified before the credentials are
+// compared so the form cannot be used as a credential oracle.
+if (!auth_verify_recaptcha($_POST['g-recaptcha-response'] ?? '')) {
+    header('Location: /login.html?error=captcha&redirect=' . urlencode($redirect));
     exit;
 }
 

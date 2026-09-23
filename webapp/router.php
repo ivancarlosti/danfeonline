@@ -5,8 +5,9 @@
  * Enforces authentication on EVERY incoming request before serving
  * any file — static (HTML, CSS, JS) or dynamic (PHP).
  *
- * Whitelisted paths (/login.html, /login.php, /logout.php) bypass
- * auth to allow the login form to render.
+ * Whitelisted paths (/login.html, /login.php, /logout.php,
+ * /auth-config.php and /styles.css) bypass auth to allow the login form
+ * to render.
  *
  * Usage:
  *   php -S 0.0.0.0:8080 router.php          (development)
@@ -32,14 +33,15 @@ $publicPaths = [
     '/login.html',
     '/login.php',
     '/logout.php',
+    '/auth-config.php',
     '/styles.css',
 ];
 
 if (!in_array($normalized, $publicPaths, true)) {
     if (!auth_check()) {
-        // Redirect to login form, preserving the original destination
-        $dest = urlencode($requestUri);
-        header('Location: /login.html?redirect=' . $dest);
+        // Redirect to the login entry point for the active auth method,
+        // preserving the original destination.
+        header('Location: ' . auth_login_path($requestUri));
         exit;
     }
 }

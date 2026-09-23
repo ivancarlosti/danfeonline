@@ -1978,6 +1978,46 @@
             transform: scale(0.97);
         }
 
+        .login-form__captcha {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 78px;
+            margin: 4px 0 18px;
+        }
+
+        .login-form__captcha[hidden] {
+            display: none;
+        }
+
+        /* SSO notice (keycloak auth mode) */
+        .login-sso {
+            text-align: center;
+            padding: 8px 0 4px;
+        }
+
+        .login-sso[hidden] {
+            display: none;
+        }
+
+        .login-sso__icon {
+            font-size: 30px;
+            color: var(--color-primary);
+            margin-bottom: 14px;
+        }
+
+        .login-sso__text {
+            font-size: 0.9rem;
+            color: var(--color-text-secondary);
+            line-height: 1.55;
+            margin-bottom: 22px;
+        }
+
+        .login-sso__link {
+            display: flex;
+            text-decoration: none;
+        }
+
         @media (max-width: 525px) {
             .login-card {
                 padding: 28px 20px;
